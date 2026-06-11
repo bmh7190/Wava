@@ -1,6 +1,7 @@
 package wava.view;
 
 import java.awt.BorderLayout;
+import java.util.List;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
@@ -8,7 +9,6 @@ import javax.swing.border.EmptyBorder;
 import wava.model.JavaProcessInfo;
 import wava.model.MetricSample;
 import wava.model.MonitorState;
-import java.util.List;
 
 public class SummaryPanel extends JPanel {
     private final JLabel stateLabel;
@@ -57,7 +57,7 @@ public class SummaryPanel extends JPanel {
                 + "Name: " + process.getDisplayName() + System.lineSeparator()
                 + "Samples: " + samples.size() + System.lineSeparator()
                 + "CPU: " + formatValue(latestSample.getCpuUsagePercent()) + " %" + System.lineSeparator()
-                + "Heap: " + formatValue(latestSample.getHeapUsedMb()) + " MB");
+                + "Heap (local): " + formatValue(latestSample.getHeapUsedMb()) + " MB");
     }
 
     private String formatValue(double value) {

@@ -23,7 +23,7 @@ public class MonitorService {
     private int sampleIndex;
 
     public MonitorService() {
-        this(new SystemMetricCollector(), DEFAULT_MAX_SAMPLES);
+        this(new TargetProcessMetricCollector(), DEFAULT_MAX_SAMPLES);
     }
 
     public MonitorService(MetricCollector metricCollector, int maxSamples) {
