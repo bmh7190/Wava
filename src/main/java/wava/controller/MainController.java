@@ -1,15 +1,21 @@
 package wava.controller;
 
 import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.util.List;
+import wava.model.JavaProcessInfo;
 import wava.model.MonitorState;
+import wava.service.JavaProcessScanner;
 import wava.view.WavaFrame;
 
 public class MainController {
     private final WavaFrame frame;
+    private final JavaProcessScanner processScanner;
     private MonitorState monitorState;
 
     public MainController() {
         frame = new WavaFrame();
+        processScanner = new JavaProcessScanner();
         monitorState = MonitorState.IDLE;
         bindActions();
         updateState(MonitorState.IDLE);
@@ -46,7 +52,14 @@ public class MainController {
     }
 
     private void refreshProcesses(ActionEvent event) {
-        frame.getLogPanel().appendInfo("Process refresh is not implemented yet.");
+        try {
+            List<JavaProcessInfo> processes = processScanner.scan();
+            frame.getProcessPanel().showProcesses(processes);
+            frame.getLogPanel().appendInfo("Loaded " + processes.size() + " Java processes.");
+        } catch (IOException exception) {
+            frame.getProcessPanel().showPlaceholder("Failed to load processes");
+            frame.getLogPanel().appendInfo("Failed to load Java processes: " + exception.getMessage());
+        }
     }
 
     private void updateState(MonitorState nextState) {
