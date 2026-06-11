@@ -6,7 +6,9 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 import wava.model.JavaProcessInfo;
+import wava.model.MetricSample;
 import wava.model.MonitorState;
+import java.util.List;
 
 public class SummaryPanel extends JPanel {
     private final JLabel stateLabel;
@@ -42,5 +44,23 @@ public class SummaryPanel extends JPanel {
         summaryArea.setText("Selected Process" + System.lineSeparator()
                 + "PID: " + process.getPid() + System.lineSeparator()
                 + "Name: " + process.getDisplayName());
+    }
+
+    public void showMonitoringSummary(JavaProcessInfo process, List<MetricSample> samples) {
+        if (process == null || samples.isEmpty()) {
+            showSelectedProcess(process);
+            return;
+        }
+        MetricSample latestSample = samples.get(samples.size() - 1);
+        summaryArea.setText("Monitoring Target" + System.lineSeparator()
+                + "PID: " + process.getPid() + System.lineSeparator()
+                + "Name: " + process.getDisplayName() + System.lineSeparator()
+                + "Samples: " + samples.size() + System.lineSeparator()
+                + "CPU: " + formatValue(latestSample.getCpuUsagePercent()) + " %" + System.lineSeparator()
+                + "Heap: " + formatValue(latestSample.getHeapUsedMb()) + " MB");
+    }
+
+    private String formatValue(double value) {
+        return String.format("%.2f", value);
     }
 }

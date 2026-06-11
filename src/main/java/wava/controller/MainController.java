@@ -2,21 +2,27 @@ package wava.controller;
 
 import java.awt.event.ActionEvent;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import javax.swing.SwingUtilities;
 import wava.model.JavaProcessInfo;
+import wava.model.MetricSample;
 import wava.model.MonitorState;
 import wava.service.JavaProcessScanner;
+import wava.service.MonitorService;
 import wava.view.WavaFrame;
 
 public class MainController {
     private final WavaFrame frame;
     private final JavaProcessScanner processScanner;
+    private final MonitorService monitorService;
     private MonitorState monitorState;
     private JavaProcessInfo selectedProcess;
 
     public MainController() {
         frame = new WavaFrame();
         processScanner = new JavaProcessScanner();
+        monitorService = new MonitorService();
         monitorState = MonitorState.IDLE;
         bindActions();
         updateState(MonitorState.IDLE);
@@ -41,15 +47,18 @@ public class MainController {
             return;
         }
         updateState(MonitorState.RUNNING);
+        monitorService.start(selectedProcess, this::showMetricSamples);
         frame.getLogPanel().appendInfo("Monitoring started for " + selectedProcess.formatListItem() + ".");
     }
 
     private void stopMonitoring(ActionEvent event) {
+        monitorService.stop();
         updateState(MonitorState.STOPPED);
         frame.getLogPanel().appendInfo("Monitoring stopped.");
     }
 
     private void resetMonitoring(ActionEvent event) {
+        monitorService.reset();
         updateState(MonitorState.IDLE);
         frame.getLogPanel().clear();
         frame.getLogPanel().appendInfo("Monitoring data reset.");
@@ -89,5 +98,29 @@ public class MainController {
         monitorState = nextState;
         frame.getControlPanel().setMonitorState(monitorState);
         frame.getSummaryPanel().showState(monitorState);
+    }
+
+    private void showMetricSamples(List<MetricSample> samples) {
+        SwingUtilities.invokeLater(() -> {
+            frame.getCpuGraphPanel().setValues(extractCpuValues(samples));
+            frame.getMemoryGraphPanel().setValues(extractMemoryValues(samples));
+            frame.getSummaryPanel().showMonitoringSummary(selectedProcess, samples);
+        });
+    }
+
+    private List<Double> extractCpuValues(List<MetricSample> samples) {
+        List<Double> values = new ArrayList<>();
+        for (MetricSample sample : samples) {
+            values.add(sample.getCpuUsagePercent());
+        }
+        return values;
+    }
+
+    private List<Double> extractMemoryValues(List<MetricSample> samples) {
+        List<Double> values = new ArrayList<>();
+        for (MetricSample sample : samples) {
+            values.add(sample.getHeapUsedMb());
+        }
+        return values;
     }
 }
