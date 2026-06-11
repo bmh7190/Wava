@@ -4,8 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionListener;
 import java.util.List;
+import java.util.function.Consumer;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -17,8 +19,10 @@ public class ProcessPanel extends JPanel {
     private static final int PREFERRED_WIDTH = 300;
 
     private final JButton refreshButton;
-    private final DefaultListModel<String> processListModel;
-    private final JList<String> processList;
+    private final JLabel statusLabel;
+    private final DefaultListModel<JavaProcessInfo> processListModel;
+    private final JList<JavaProcessInfo> processList;
+    private Consumer<JavaProcessInfo> selectionListener;
 
     public ProcessPanel() {
         super(new BorderLayout(0, 8));
@@ -26,12 +30,13 @@ public class ProcessPanel extends JPanel {
         setPreferredSize(new Dimension(PREFERRED_WIDTH, 0));
 
         refreshButton = new JButton("Refresh Processes");
+        statusLabel = new JLabel("No process loaded");
         processListModel = new DefaultListModel<>();
         processList = new JList<>(processListModel);
         processList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        showPlaceholder("No process loaded");
+        processList.addListSelectionListener(event -> notifySelectionChanged());
 
-        add(refreshButton, BorderLayout.NORTH);
+        add(createHeaderPanel(), BorderLayout.NORTH);
         add(new JScrollPane(processList), BorderLayout.CENTER);
     }
 
@@ -39,19 +44,41 @@ public class ProcessPanel extends JPanel {
         refreshButton.addActionListener(listener);
     }
 
+    public void setSelectionAction(Consumer<JavaProcessInfo> listener) {
+        selectionListener = listener;
+    }
+
+    public JavaProcessInfo getSelectedProcess() {
+        return processList.getSelectedValue();
+    }
+
     public void showProcesses(List<JavaProcessInfo> processes) {
         processListModel.clear();
         if (processes.isEmpty()) {
-            showPlaceholder("No Java process found");
+            statusLabel.setText("No Java process found");
             return;
         }
         for (JavaProcessInfo process : processes) {
-            processListModel.addElement(process.formatListItem());
+            processListModel.addElement(process);
         }
+        statusLabel.setText(processes.size() + " processes loaded");
     }
 
-    public void showPlaceholder(String message) {
+    public void showPlaceholder() {
         processListModel.clear();
-        processListModel.addElement(message);
+        statusLabel.setText("No process loaded");
+    }
+
+    private JPanel createHeaderPanel() {
+        JPanel panel = new JPanel(new BorderLayout(0, 6));
+        panel.add(refreshButton, BorderLayout.NORTH);
+        panel.add(statusLabel, BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private void notifySelectionChanged() {
+        if (selectionListener != null && !processList.getValueIsAdjusting()) {
+            selectionListener.accept(getSelectedProcess());
+        }
     }
 }

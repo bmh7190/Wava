@@ -20,4 +20,9 @@ public class JavaProcessInfo {
     public String formatListItem() {
         return pid + "  " + displayName;
     }
+
+    @Override
+    public String toString() {
+        return formatListItem();
+    }
 }
