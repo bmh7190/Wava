@@ -1,8 +1,5 @@
 package wava.service;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
 import java.time.Duration;
 import java.util.Optional;
 import wava.model.JavaProcessInfo;
@@ -10,21 +7,23 @@ import wava.model.MetricSample;
 import wava.model.ProcessCpuSnapshot;
 
 public class TargetProcessMetricCollector implements MetricCollector {
-    private static final double BYTES_PER_MB = 1024.0 * 1024.0;
-
     private final ProcessCpuTracker cpuTracker;
-    private final MemoryMXBean memoryBean;
+    private final HeapMemoryReader heapMemoryReader;
 
     public TargetProcessMetricCollector() {
-        cpuTracker = new ProcessCpuTracker();
-        memoryBean = ManagementFactory.getMemoryMXBean();
+        this(new ProcessCpuTracker(), new TargetJvmMemoryReader());
+    }
+
+    public TargetProcessMetricCollector(ProcessCpuTracker cpuTracker, HeapMemoryReader heapMemoryReader) {
+        this.cpuTracker = cpuTracker;
+        this.heapMemoryReader = heapMemoryReader;
     }
 
     @Override
     public MetricSample collect(JavaProcessInfo targetProcess, int sampleIndex) {
         long timestamp = System.currentTimeMillis();
         double cpuUsage = readTargetCpuUsage(targetProcess, timestamp);
-        double heapUsedMb = readLocalHeapUsedMb();
+        double heapUsedMb = heapMemoryReader.readHeapUsedMb(targetProcess);
         return new MetricSample(timestamp, cpuUsage, heapUsedMb);
     }
 
@@ -49,10 +48,5 @@ public class TargetProcessMetricCollector implements MetricCollector {
                 timestamp,
                 cpuDuration.get().toMillis());
         return cpuTracker.calculateUsage(snapshot);
-    }
-
-    private double readLocalHeapUsedMb() {
-        MemoryUsage heapUsage = memoryBean.getHeapMemoryUsage();
-        return heapUsage.getUsed() / BYTES_PER_MB;
     }
 }

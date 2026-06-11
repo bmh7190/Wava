@@ -57,7 +57,7 @@ public class SummaryPanel extends JPanel {
                 + "Name: " + process.getDisplayName() + System.lineSeparator()
                 + "Samples: " + samples.size() + System.lineSeparator()
                 + "CPU: " + formatValue(latestSample.getCpuUsagePercent()) + " %" + System.lineSeparator()
-                + "Heap (local): " + formatValue(latestSample.getHeapUsedMb()) + " MB");
+                + "Heap: " + formatValue(latestSample.getHeapUsedMb()) + " MB");
     }
 
     private String formatValue(double value) {
