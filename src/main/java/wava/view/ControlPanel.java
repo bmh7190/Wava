@@ -1,0 +1,50 @@
+package wava.view;
+
+import java.awt.FlowLayout;
+import java.awt.event.ActionListener;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
+import wava.model.MonitorState;
+
+public class ControlPanel extends JPanel {
+    private final JButton startButton;
+    private final JButton stopButton;
+    private final JButton resetButton;
+    private final JLabel stateLabel;
+
+    public ControlPanel() {
+        super(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        setBorder(new EmptyBorder(4, 4, 4, 4));
+
+        startButton = new JButton("Start");
+        stopButton = new JButton("Stop");
+        resetButton = new JButton("Reset");
+        stateLabel = new JLabel();
+
+        add(startButton);
+        add(stopButton);
+        add(resetButton);
+        add(stateLabel);
+        setMonitorState(MonitorState.IDLE);
+    }
+
+    public void setStartAction(ActionListener listener) {
+        startButton.addActionListener(listener);
+    }
+
+    public void setStopAction(ActionListener listener) {
+        stopButton.addActionListener(listener);
+    }
+
+    public void setResetAction(ActionListener listener) {
+        resetButton.addActionListener(listener);
+    }
+
+    public void setMonitorState(MonitorState state) {
+        stateLabel.setText("State: " + state.getLabel());
+        startButton.setEnabled(state != MonitorState.RUNNING);
+        stopButton.setEnabled(state == MonitorState.RUNNING);
+    }
+}
