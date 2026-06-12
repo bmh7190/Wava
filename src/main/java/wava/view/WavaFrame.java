@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import wava.model.GraphScaleMode;
 
 public class WavaFrame extends JFrame {
     private static final int DEFAULT_WIDTH = 1100;
@@ -21,8 +22,8 @@ public class WavaFrame extends JFrame {
         super("Wava");
         processPanel = new ProcessPanel();
         controlPanel = new ControlPanel();
-        cpuGraphPanel = new GraphPanel("CPU Usage", "%");
-        memoryGraphPanel = new GraphPanel("Heap Memory", "MB");
+        cpuGraphPanel = new GraphPanel("CPU Usage", "%", GraphScaleMode.FIXED);
+        memoryGraphPanel = new GraphPanel("Heap Memory", "MB", GraphScaleMode.AUTO);
         logPanel = new LogPanel();
         summaryPanel = new SummaryPanel();
 
