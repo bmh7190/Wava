@@ -2,6 +2,7 @@ package wava.controller;
 
 import java.awt.event.ActionEvent;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.SwingUtilities;
@@ -13,6 +14,7 @@ import wava.model.MetricSample;
 import wava.model.MonitorState;
 import wava.model.WarmupStabilityPoint;
 import wava.model.WarmupSummary;
+import wava.service.CsvExportService;
 import wava.service.JavaProcessScanner;
 import wava.service.JitEventFilter;
 import wava.service.JitLogReader;
@@ -23,10 +25,13 @@ import wava.service.WarmupStabilityAnalyzer;
 import wava.view.WavaFrame;
 
 public class MainController {
+    private static final Path DEFAULT_EXPORT_PATH = Path.of("exports", "wava-monitoring.csv");
+
     private final WavaFrame frame;
     private final JavaProcessScanner processScanner;
     private final MonitorService monitorService;
     private final JitLogReader jitLogReader;
+    private final CsvExportService csvExportService;
     private final WarmupAnalyzer warmupAnalyzer;
     private final WarmupStabilityAnalyzer warmupStabilityAnalyzer;
     private final JitSummaryAnalyzer jitSummaryAnalyzer;
@@ -40,6 +45,7 @@ public class MainController {
         processScanner = new JavaProcessScanner();
         monitorService = new MonitorService();
         jitLogReader = new JitLogReader();
+        csvExportService = new CsvExportService();
         warmupAnalyzer = new WarmupAnalyzer();
         warmupStabilityAnalyzer = new WarmupStabilityAnalyzer();
         jitSummaryAnalyzer = new JitSummaryAnalyzer();
@@ -58,6 +64,7 @@ public class MainController {
         frame.getControlPanel().setStartAction(this::startMonitoring);
         frame.getControlPanel().setStopAction(this::stopMonitoring);
         frame.getControlPanel().setResetAction(this::resetMonitoring);
+        frame.getControlPanel().setExportAction(this::exportCsv);
         frame.getProcessPanel().setRefreshAction(this::refreshProcesses);
         frame.getProcessPanel().setSelectionAction(this::selectProcess);
         frame.getLogPanel().setApplySettingsAction(this::applyJitSettings);
@@ -93,6 +100,24 @@ public class MainController {
         frame.getCpuGraphPanel().clearData();
         frame.getMemoryGraphPanel().clearData();
         frame.getSummaryPanel().showSelectedProcess(selectedProcess);
+    }
+
+    private void exportCsv(ActionEvent event) {
+        List<MetricSample> samples = monitorService.getSamples();
+        if (samples.isEmpty()) {
+            frame.getLogPanel().appendInfo("No monitoring data to export.");
+            frame.getSummaryPanel().showMessage("No monitoring data to export.");
+            return;
+        }
+
+        try {
+            Path outputPath = csvExportService.export(samples, jitEvents, jitEventFilter, DEFAULT_EXPORT_PATH);
+            frame.getLogPanel().appendInfo("Exported monitoring data to " + outputPath + ".");
+            frame.getSummaryPanel().showMessage("Exported monitoring data to " + outputPath + ".");
+        } catch (IOException exception) {
+            frame.getLogPanel().appendInfo("Failed to export CSV: " + exception.getMessage());
+            frame.getSummaryPanel().showMessage("Failed to export CSV.");
+        }
     }
 
     private void refreshProcesses(ActionEvent event) {

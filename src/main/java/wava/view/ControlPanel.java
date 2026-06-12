@@ -11,6 +11,7 @@ public class ControlPanel extends JPanel {
     private final JButton startButton;
     private final JButton stopButton;
     private final JButton resetButton;
+    private final JButton exportButton;
     private final JLabel stateLabel;
 
     public ControlPanel() {
@@ -20,11 +21,13 @@ public class ControlPanel extends JPanel {
         startButton = new JButton("Start");
         stopButton = new JButton("Stop");
         resetButton = new JButton("Reset");
+        exportButton = new JButton("Export CSV");
         stateLabel = new JLabel();
 
         add(startButton);
         add(stopButton);
         add(resetButton);
+        add(exportButton);
         add(stateLabel);
         setMonitorState(MonitorState.IDLE);
     }
@@ -39,6 +42,10 @@ public class ControlPanel extends JPanel {
 
     public void setResetAction(ActionListener listener) {
         resetButton.addActionListener(listener);
+    }
+
+    public void setExportAction(ActionListener listener) {
+        exportButton.addActionListener(listener);
     }
 
     public void setMonitorState(MonitorState state) {
