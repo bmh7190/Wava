@@ -9,6 +9,7 @@ import wava.model.JitEvent;
 public class JitLogReaderTest {
     public static void main(String[] args) throws Exception {
         readOnlyNewEvents();
+        readUtf16PowerShellLog();
         handleMissingLogFile();
         resetReadsFromBeginning();
     }
@@ -26,6 +27,22 @@ public class JitLogReaderTest {
 
             assertEquals(1, firstRead.size(), "first read size");
             assertEquals(0, secondRead.size(), "second read size");
+        } finally {
+            Files.deleteIfExists(logFile);
+        }
+    }
+
+    private static void readUtf16PowerShellLog() throws Exception {
+        Path logFile = Files.createTempFile("wava-jit-utf16", ".log");
+        try {
+            Files.write(logFile, List.of(
+                    "123  1       3       com.example.A::run (10 bytes)"),
+                    StandardCharsets.UTF_16);
+            JitLogReader reader = new JitLogReader(logFile, new JitLogParser());
+
+            List<JitEvent> events = reader.readNewEvents();
+
+            assertEquals(1, events.size(), "utf16 read size");
         } finally {
             Files.deleteIfExists(logFile);
         }
