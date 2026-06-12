@@ -29,6 +29,8 @@ bin/
 
 ### Local project notes ###
 docs/
+logs/*.log
+!logs/.gitkeep
 
 ### Mac OS ###
 .DS_Store
