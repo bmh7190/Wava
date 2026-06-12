@@ -8,14 +8,18 @@ import javax.swing.SwingUtilities;
 import wava.model.GraphMarker;
 import wava.model.JavaProcessInfo;
 import wava.model.JitEvent;
+import wava.model.JitEventSummary;
 import wava.model.MetricSample;
 import wava.model.MonitorState;
+import wava.model.WarmupStabilityPoint;
 import wava.model.WarmupSummary;
 import wava.service.JavaProcessScanner;
 import wava.service.JitEventFilter;
 import wava.service.JitLogReader;
+import wava.service.JitSummaryAnalyzer;
 import wava.service.MonitorService;
 import wava.service.WarmupAnalyzer;
+import wava.service.WarmupStabilityAnalyzer;
 import wava.view.WavaFrame;
 
 public class MainController {
@@ -24,6 +28,8 @@ public class MainController {
     private final MonitorService monitorService;
     private final JitLogReader jitLogReader;
     private final WarmupAnalyzer warmupAnalyzer;
+    private final WarmupStabilityAnalyzer warmupStabilityAnalyzer;
+    private final JitSummaryAnalyzer jitSummaryAnalyzer;
     private final List<JitEvent> jitEvents;
     private JitEventFilter jitEventFilter;
     private MonitorState monitorState;
@@ -35,6 +41,8 @@ public class MainController {
         monitorService = new MonitorService();
         jitLogReader = new JitLogReader();
         warmupAnalyzer = new WarmupAnalyzer();
+        warmupStabilityAnalyzer = new WarmupStabilityAnalyzer();
+        jitSummaryAnalyzer = new JitSummaryAnalyzer();
         jitEvents = new ArrayList<>();
         jitEventFilter = new JitEventFilter("");
         monitorState = MonitorState.IDLE;
@@ -123,13 +131,20 @@ public class MainController {
     private void showMetricSamples(List<MetricSample> samples) {
         SwingUtilities.invokeLater(() -> {
             showJitEvents();
-            List<GraphMarker> markers = createGraphMarkers();
+            WarmupSummary summary = warmupAnalyzer.analyze(samples);
+            WarmupStabilityPoint stabilityPoint = warmupStabilityAnalyzer.analyze(samples, jitEvents, jitEventFilter);
+            JitEventSummary jitSummary = jitSummaryAnalyzer.analyze(jitEvents, jitEventFilter);
+            List<GraphMarker> markers = createGraphMarkers(stabilityPoint);
             frame.getCpuGraphPanel().setSamples(samples, extractCpuValues(samples));
             frame.getCpuGraphPanel().setMarkers(markers);
             frame.getMemoryGraphPanel().setSamples(samples, extractMemoryValues(samples));
             frame.getMemoryGraphPanel().setMarkers(markers);
-            WarmupSummary summary = warmupAnalyzer.analyze(samples);
-            frame.getSummaryPanel().showMonitoringSummary(selectedProcess, samples, summary);
+            frame.getSummaryPanel().showMonitoringSummary(
+                    selectedProcess,
+                    samples,
+                    summary,
+                    stabilityPoint,
+                    jitSummary);
         });
     }
 
@@ -163,12 +178,15 @@ public class MainController {
         return values;
     }
 
-    private List<GraphMarker> createGraphMarkers() {
+    private List<GraphMarker> createGraphMarkers(WarmupStabilityPoint stabilityPoint) {
         List<GraphMarker> markers = new ArrayList<>();
         for (JitEvent event : jitEvents) {
             if (jitEventFilter.matches(event)) {
                 markers.add(new GraphMarker(event.getTimestampMillis(), "JIT"));
             }
+        }
+        if (stabilityPoint.isAvailable()) {
+            markers.add(new GraphMarker(stabilityPoint.getTimestampMillis(), "Stable"));
         }
         return markers;
     }

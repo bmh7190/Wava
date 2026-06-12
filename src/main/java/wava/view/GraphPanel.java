@@ -10,7 +10,6 @@ import java.awt.RenderingHints;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
 import wava.model.GraphMarker;
 import wava.model.GraphScale;
 import wava.model.GraphScaleMode;
@@ -27,6 +26,7 @@ public class GraphPanel extends JPanel {
     private static final int TICK_COUNT = 5;
     private static final int POINT_RADIUS = 4;
     private static final GraphScale CPU_SCALE = GraphScale.fixed(0.0, 100.0);
+    private static final Color STABILITY_COLOR = new Color(22, 163, 74);
 
     private final String unit;
     private final GraphScaleMode scaleMode;
@@ -176,17 +176,25 @@ public class GraphPanel extends JPanel {
         g2.setStroke(new BasicStroke(1f));
         for (GraphMarker marker : markers) {
             int x = timeline.calculateX(marker.getTimestampMillis(), left, right);
-            g2.setColor(new Color(UiStyle.DANGER.getRed(), UiStyle.DANGER.getGreen(), UiStyle.DANGER.getBlue(), 150));
+            Color markerColor = getMarkerColor(marker);
+            g2.setColor(new Color(markerColor.getRed(), markerColor.getGreen(), markerColor.getBlue(), 150));
             g2.drawLine(x, top, x, bottom);
-            drawMarkerLabel(g2, marker, x, top);
+            drawMarkerLabel(g2, marker, x, top, markerColor);
         }
     }
 
-    private void drawMarkerLabel(Graphics2D g2, GraphMarker marker, int x, int top) {
+    private Color getMarkerColor(GraphMarker marker) {
+        if ("Stable".equals(marker.getLabel())) {
+            return STABILITY_COLOR;
+        }
+        return UiStyle.DANGER;
+    }
+
+    private void drawMarkerLabel(Graphics2D g2, GraphMarker marker, int x, int top, Color markerColor) {
         String label = marker.getLabel();
         FontMetrics metrics = g2.getFontMetrics();
         int labelX = Math.min(x + 3, getWidth() - RIGHT_PADDING - metrics.stringWidth(label));
-        g2.setColor(UiStyle.DANGER);
+        g2.setColor(markerColor);
         g2.drawString(label, Math.max(LEFT_PADDING, labelX), top + 12);
     }
 

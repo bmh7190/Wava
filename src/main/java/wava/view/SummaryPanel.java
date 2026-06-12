@@ -4,11 +4,14 @@ import java.awt.BorderLayout;
 import java.util.List;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.border.EmptyBorder;
 import wava.model.JavaProcessInfo;
+import wava.model.JitEventSummary;
+import wava.model.JitMethodCount;
 import wava.model.MetricSample;
 import wava.model.MonitorState;
+import wava.model.WarmupStabilityPoint;
 import wava.model.WarmupSummary;
 
 public class SummaryPanel extends JPanel {
@@ -26,7 +29,7 @@ public class SummaryPanel extends JPanel {
         summaryArea.setRows(8);
 
         add(stateLabel, BorderLayout.NORTH);
-        add(summaryArea, BorderLayout.CENTER);
+        add(new JScrollPane(summaryArea), BorderLayout.CENTER);
         showMessage("No monitoring data.");
     }
 
@@ -48,7 +51,12 @@ public class SummaryPanel extends JPanel {
                 + "Name: " + process.getDisplayName());
     }
 
-    public void showMonitoringSummary(JavaProcessInfo process, List<MetricSample> samples, WarmupSummary summary) {
+    public void showMonitoringSummary(
+            JavaProcessInfo process,
+            List<MetricSample> samples,
+            WarmupSummary summary,
+            WarmupStabilityPoint stabilityPoint,
+            JitEventSummary jitSummary) {
         if (process == null || samples.isEmpty()) {
             showSelectedProcess(process);
             return;
@@ -61,7 +69,11 @@ public class SummaryPanel extends JPanel {
                 + "CPU: " + formatValue(latestSample.getCpuUsagePercent()) + " %" + System.lineSeparator()
                 + "Heap: " + formatValue(latestSample.getHeapUsedMb()) + " MB" + System.lineSeparator()
                 + System.lineSeparator()
-                + formatWarmupSummary(summary));
+                + formatWarmupSummary(summary) + System.lineSeparator()
+                + System.lineSeparator()
+                + formatStabilityPoint(stabilityPoint) + System.lineSeparator()
+                + System.lineSeparator()
+                + formatJitSummary(jitSummary));
     }
 
     private String formatWarmupSummary(WarmupSummary summary) {
@@ -77,6 +89,54 @@ public class SummaryPanel extends JPanel {
                 + "Heap early avg: " + formatValue(summary.getEarlyAverageHeap()) + " MB" + System.lineSeparator()
                 + "Heap late avg: " + formatValue(summary.getLateAverageHeap()) + " MB" + System.lineSeparator()
                 + "Heap change: " + formatSignedValue(summary.getHeapChange()) + " MB";
+    }
+
+    private String formatStabilityPoint(WarmupStabilityPoint point) {
+        if (!point.isAvailable()) {
+            return "Warm-up Stability" + System.lineSeparator()
+                    + "Estimated stable point: Not available" + System.lineSeparator()
+                    + "Samples checked: " + point.getSampleCount();
+        }
+
+        return "Warm-up Stability" + System.lineSeparator()
+                + "Estimated stable point: sample " + point.getSampleIndex() + System.lineSeparator()
+                + "CPU range: " + formatValue(point.getCpuRangePercent()) + " %" + System.lineSeparator()
+                + "JIT events in window: " + point.getJitEventCount();
+    }
+
+    private String formatJitSummary(JitEventSummary summary) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("JIT Summary").append(System.lineSeparator())
+                .append("Events: ")
+                .append(summary.getTotalEventCount())
+                .append(" total / ")
+                .append(summary.getMatchedEventCount())
+                .append(" shown");
+
+        if (!summary.hasMatchedEvents()) {
+            return builder.append(System.lineSeparator())
+                    .append("No matching JIT events.")
+                    .toString();
+        }
+
+        builder.append(System.lineSeparator())
+                .append("Latest: ")
+                .append(summary.getLatestMethodName())
+                .append(System.lineSeparator())
+                .append("Top methods:");
+
+        int rank = 1;
+        for (JitMethodCount method : summary.getTopMethods()) {
+            builder.append(System.lineSeparator())
+                    .append(rank)
+                    .append(". ")
+                    .append(method.getMethodName())
+                    .append(" (")
+                    .append(method.getCount())
+                    .append(")");
+            rank++;
+        }
+        return builder.toString();
     }
 
     private String formatValue(double value) {
