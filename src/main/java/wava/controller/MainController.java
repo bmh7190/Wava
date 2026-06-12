@@ -6,9 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.SwingUtilities;
 import wava.model.JavaProcessInfo;
+import wava.model.JitEvent;
 import wava.model.MetricSample;
 import wava.model.MonitorState;
 import wava.service.JavaProcessScanner;
+import wava.service.JitLogReader;
 import wava.service.MonitorService;
 import wava.view.WavaFrame;
 
@@ -16,6 +18,7 @@ public class MainController {
     private final WavaFrame frame;
     private final JavaProcessScanner processScanner;
     private final MonitorService monitorService;
+    private final JitLogReader jitLogReader;
     private MonitorState monitorState;
     private JavaProcessInfo selectedProcess;
 
@@ -23,6 +26,7 @@ public class MainController {
         frame = new WavaFrame();
         processScanner = new JavaProcessScanner();
         monitorService = new MonitorService();
+        jitLogReader = new JitLogReader();
         monitorState = MonitorState.IDLE;
         bindActions();
         updateState(MonitorState.IDLE);
@@ -47,8 +51,10 @@ public class MainController {
             return;
         }
         updateState(MonitorState.RUNNING);
+        jitLogReader.reset();
         monitorService.start(selectedProcess, this::showMetricSamples);
         frame.getLogPanel().appendInfo("Monitoring started for " + selectedProcess.formatListItem() + ".");
+        frame.getLogPanel().appendInfo("Reading JIT log from " + jitLogReader.getLogPath() + ".");
     }
 
     private void stopMonitoring(ActionEvent event) {
@@ -59,6 +65,7 @@ public class MainController {
 
     private void resetMonitoring(ActionEvent event) {
         monitorService.reset();
+        jitLogReader.reset();
         updateState(MonitorState.IDLE);
         frame.getLogPanel().clear();
         frame.getLogPanel().appendInfo("Monitoring data reset.");
@@ -105,7 +112,19 @@ public class MainController {
             frame.getCpuGraphPanel().setValues(extractCpuValues(samples));
             frame.getMemoryGraphPanel().setValues(extractMemoryValues(samples));
             frame.getSummaryPanel().showMonitoringSummary(selectedProcess, samples);
+            showJitEvents();
         });
+    }
+
+    private void showJitEvents() {
+        try {
+            List<JitEvent> events = jitLogReader.readNewEvents();
+            for (JitEvent event : events) {
+                frame.getLogPanel().appendJitEvent(event);
+            }
+        } catch (IOException exception) {
+            frame.getLogPanel().appendInfo("Failed to read JIT log: " + exception.getMessage());
+        }
     }
 
     private List<Double> extractCpuValues(List<MetricSample> samples) {

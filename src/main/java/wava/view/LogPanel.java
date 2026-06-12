@@ -6,6 +6,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
+import wava.model.JitEvent;
 
 public class LogPanel extends JPanel {
     private final JTextArea logArea;
@@ -26,7 +27,15 @@ public class LogPanel extends JPanel {
     }
 
     public void appendInfo(String message) {
-        logArea.append("[INFO] " + message + System.lineSeparator());
+        appendLine("[INFO] " + message);
+    }
+
+    public void appendJitEvent(JitEvent event) {
+        appendLine("[JIT] " + event.formatLogMessage());
+    }
+
+    private void appendLine(String message) {
+        logArea.append(message + System.lineSeparator());
         logArea.setCaretPosition(logArea.getDocument().getLength());
     }
 
