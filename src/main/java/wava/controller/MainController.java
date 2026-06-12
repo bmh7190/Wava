@@ -13,6 +13,7 @@ import wava.model.JitEventSummary;
 import wava.model.JitLogStatus;
 import wava.model.MetricSample;
 import wava.model.MonitorState;
+import wava.model.TargetProcessStatus;
 import wava.model.WarmupStabilityPoint;
 import wava.model.WarmupSummary;
 import wava.service.CsvExportService;
@@ -21,6 +22,7 @@ import wava.service.JitEventFilter;
 import wava.service.JitLogReader;
 import wava.service.JitSummaryAnalyzer;
 import wava.service.MonitorService;
+import wava.service.ProcessStatusChecker;
 import wava.service.WarmupAnalyzer;
 import wava.service.WarmupStabilityAnalyzer;
 import wava.view.WavaFrame;
@@ -31,6 +33,7 @@ public class MainController {
     private final WavaFrame frame;
     private final JavaProcessScanner processScanner;
     private final MonitorService monitorService;
+    private final ProcessStatusChecker processStatusChecker;
     private final JitLogReader jitLogReader;
     private final CsvExportService csvExportService;
     private final WarmupAnalyzer warmupAnalyzer;
@@ -41,6 +44,7 @@ public class MainController {
     private JitLogStatus jitLogStatus;
     private String jitFilterText;
     private String lastJitLogStatusKey;
+    private TargetProcessStatus targetProcessStatus;
     private MonitorState monitorState;
     private JavaProcessInfo selectedProcess;
 
@@ -48,6 +52,7 @@ public class MainController {
         frame = new WavaFrame();
         processScanner = new JavaProcessScanner();
         monitorService = new MonitorService();
+        processStatusChecker = new ProcessStatusChecker();
         jitLogReader = new JitLogReader();
         csvExportService = new CsvExportService();
         warmupAnalyzer = new WarmupAnalyzer();
@@ -58,6 +63,7 @@ public class MainController {
         jitLogStatus = jitLogReader.inspectStatus();
         jitFilterText = "";
         lastJitLogStatusKey = "";
+        targetProcessStatus = TargetProcessStatus.UNKNOWN;
         monitorState = MonitorState.IDLE;
         bindActions();
         updateState(MonitorState.IDLE);
@@ -83,6 +89,12 @@ public class MainController {
             frame.getSummaryPanel().showMessage("No process selected.");
             return;
         }
+        targetProcessStatus = processStatusChecker.check(selectedProcess);
+        if (targetProcessStatus != TargetProcessStatus.RUNNING) {
+            frame.getLogPanel().appendInfo("Selected process is not running.");
+            frame.getSummaryPanel().showMessage("Selected process is not running.");
+            return;
+        }
         updateState(MonitorState.RUNNING);
         jitLogReader.reset();
         jitEvents.clear();
@@ -102,6 +114,7 @@ public class MainController {
         monitorService.reset();
         jitLogReader.reset();
         jitEvents.clear();
+        targetProcessStatus = TargetProcessStatus.UNKNOWN;
         updateState(MonitorState.IDLE);
         frame.getLogPanel().clear();
         frame.getLogPanel().appendInfo("Monitoring data reset.");
@@ -149,6 +162,7 @@ public class MainController {
 
     private void selectProcess(JavaProcessInfo process) {
         selectedProcess = process;
+        targetProcessStatus = processStatusChecker.check(process);
         frame.getSummaryPanel().showSelectedProcess(process);
         if (process != null) {
             frame.getLogPanel().appendInfo("Selected process " + process.formatListItem() + ".");
@@ -164,6 +178,7 @@ public class MainController {
     private void showMetricSamples(List<MetricSample> samples) {
         SwingUtilities.invokeLater(() -> {
             showJitEvents();
+            targetProcessStatus = processStatusChecker.check(selectedProcess);
             WarmupSummary summary = warmupAnalyzer.analyze(samples);
             WarmupStabilityPoint stabilityPoint = warmupStabilityAnalyzer.analyze(samples, jitEvents, jitEventFilter);
             JitEventSummary jitSummary = jitSummaryAnalyzer.analyze(jitEvents, jitEventFilter);
@@ -174,13 +189,26 @@ public class MainController {
             frame.getMemoryGraphPanel().setMarkers(markers);
             frame.getSummaryPanel().showMonitoringSummary(
                     selectedProcess,
+                    targetProcessStatus,
                     samples,
                     summary,
                     stabilityPoint,
                     jitLogStatus,
                     jitFilterText,
                     jitSummary);
+            if (targetProcessStatus == TargetProcessStatus.ENDED) {
+                stopEndedTargetProcess();
+            }
         });
+    }
+
+    private void stopEndedTargetProcess() {
+        if (monitorState != MonitorState.RUNNING) {
+            return;
+        }
+        monitorService.stop();
+        updateState(MonitorState.STOPPED);
+        frame.getLogPanel().appendInfo("Target process ended. Monitoring stopped.");
     }
 
     private void showJitEvents() {

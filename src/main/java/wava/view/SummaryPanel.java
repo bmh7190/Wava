@@ -12,6 +12,7 @@ import wava.model.JitLogStatus;
 import wava.model.JitMethodCount;
 import wava.model.MetricSample;
 import wava.model.MonitorState;
+import wava.model.TargetProcessStatus;
 import wava.model.WarmupStabilityPoint;
 import wava.model.WarmupSummary;
 
@@ -54,6 +55,7 @@ public class SummaryPanel extends JPanel {
 
     public void showMonitoringSummary(
             JavaProcessInfo process,
+            TargetProcessStatus targetProcessStatus,
             List<MetricSample> samples,
             WarmupSummary summary,
             WarmupStabilityPoint stabilityPoint,
@@ -68,6 +70,7 @@ public class SummaryPanel extends JPanel {
         summaryArea.setText("Monitoring Target" + System.lineSeparator()
                 + "PID: " + process.getPid() + System.lineSeparator()
                 + "Name: " + process.getDisplayName() + System.lineSeparator()
+                + "Target status: " + targetProcessStatus.getLabel() + System.lineSeparator()
                 + "Samples: " + samples.size() + System.lineSeparator()
                 + "CPU: " + formatValue(latestSample.getCpuUsagePercent()) + " %" + System.lineSeparator()
                 + "Heap: " + formatValue(latestSample.getHeapUsedMb()) + " MB" + System.lineSeparator()
