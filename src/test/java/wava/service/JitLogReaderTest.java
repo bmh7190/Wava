@@ -5,12 +5,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import wava.model.JitEvent;
+import wava.model.JitLogStatus;
 
 public class JitLogReaderTest {
     public static void main(String[] args) throws Exception {
         readOnlyNewEvents();
         readUtf16PowerShellLog();
         handleMissingLogFile();
+        inspectMissingLogStatus();
+        inspectReadyLogStatus();
         resetReadsFromBeginning();
         changingPathResetsReader();
     }
@@ -80,6 +83,31 @@ public class JitLogReaderTest {
         assertEquals(0, reader.readNewEvents().size(), "missing file size");
     }
 
+    private static void inspectMissingLogStatus() {
+        Path missingFile = Path.of("missing-jit-" + System.nanoTime() + ".log");
+        JitLogReader reader = new JitLogReader(missingFile, new JitLogParser());
+
+        JitLogStatus status = reader.inspectStatus();
+
+        assertEquals("Missing", status.getStateLabel(), "missing status");
+    }
+
+    private static void inspectReadyLogStatus() throws Exception {
+        Path logFile = Files.createTempFile("wava-jit-ready", ".log");
+        try {
+            Files.write(logFile, List.of(
+                    "123  1       3       com.example.A::run (10 bytes)"),
+                    StandardCharsets.UTF_8);
+            JitLogReader reader = new JitLogReader(logFile, new JitLogParser());
+
+            JitLogStatus status = reader.inspectStatus();
+
+            assertEquals("Ready", status.getStateLabel(), "ready status");
+        } finally {
+            Files.deleteIfExists(logFile);
+        }
+    }
+
     private static void resetReadsFromBeginning() throws Exception {
         Path logFile = Files.createTempFile("wava-jit-reset", ".log");
         try {
@@ -100,6 +128,12 @@ public class JitLogReaderTest {
 
     private static void assertEquals(int expected, int actual, String label) {
         if (expected != actual) {
+            throw new AssertionError(label + " expected " + expected + " but was " + actual);
+        }
+    }
+
+    private static void assertEquals(String expected, String actual, String label) {
+        if (!expected.equals(actual)) {
             throw new AssertionError(label + " expected " + expected + " but was " + actual);
         }
     }

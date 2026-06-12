@@ -10,6 +10,7 @@ import wava.model.GraphMarker;
 import wava.model.JavaProcessInfo;
 import wava.model.JitEvent;
 import wava.model.JitEventSummary;
+import wava.model.JitLogStatus;
 import wava.model.MetricSample;
 import wava.model.MonitorState;
 import wava.model.WarmupStabilityPoint;
@@ -37,6 +38,9 @@ public class MainController {
     private final JitSummaryAnalyzer jitSummaryAnalyzer;
     private final List<JitEvent> jitEvents;
     private JitEventFilter jitEventFilter;
+    private JitLogStatus jitLogStatus;
+    private String jitFilterText;
+    private String lastJitLogStatusKey;
     private MonitorState monitorState;
     private JavaProcessInfo selectedProcess;
 
@@ -51,6 +55,9 @@ public class MainController {
         jitSummaryAnalyzer = new JitSummaryAnalyzer();
         jitEvents = new ArrayList<>();
         jitEventFilter = new JitEventFilter("");
+        jitLogStatus = jitLogReader.inspectStatus();
+        jitFilterText = "";
+        lastJitLogStatusKey = "";
         monitorState = MonitorState.IDLE;
         bindActions();
         updateState(MonitorState.IDLE);
@@ -79,6 +86,7 @@ public class MainController {
         updateState(MonitorState.RUNNING);
         jitLogReader.reset();
         jitEvents.clear();
+        updateJitLogStatus(true);
         monitorService.start(selectedProcess, this::showMetricSamples);
         frame.getLogPanel().appendInfo("Monitoring started for " + selectedProcess.formatListItem() + ".");
         frame.getLogPanel().appendInfo("Reading JIT log from " + jitLogReader.getLogPath() + ".");
@@ -169,11 +177,17 @@ public class MainController {
                     samples,
                     summary,
                     stabilityPoint,
+                    jitLogStatus,
+                    jitFilterText,
                     jitSummary);
         });
     }
 
     private void showJitEvents() {
+        updateJitLogStatus(false);
+        if (!jitLogStatus.isReadable()) {
+            return;
+        }
         try {
             List<JitEvent> events = jitLogReader.readNewEvents();
             for (JitEvent event : events) {
@@ -183,6 +197,7 @@ public class MainController {
                 }
             }
         } catch (IOException exception) {
+            setJitLogStatus(JitLogStatus.readError(jitLogReader.getLogPath(), exception.getMessage()), true);
             frame.getLogPanel().appendInfo("Failed to read JIT log: " + exception.getMessage());
         }
     }
@@ -218,10 +233,25 @@ public class MainController {
 
     private void applyJitSettings(ActionEvent event) {
         jitLogReader.setLogPath(frame.getLogPanel().getLogPath());
-        jitEventFilter = new JitEventFilter(frame.getLogPanel().getFilterText());
+        jitFilterText = frame.getLogPanel().getFilterText().trim();
+        jitEventFilter = new JitEventFilter(jitFilterText);
         jitEvents.clear();
         frame.getCpuGraphPanel().setMarkers(List.of());
         frame.getMemoryGraphPanel().setMarkers(List.of());
         frame.getLogPanel().appendInfo("JIT settings applied. Log: " + jitLogReader.getLogPath());
+        updateJitLogStatus(true);
+    }
+
+    private void updateJitLogStatus(boolean forceLog) {
+        setJitLogStatus(jitLogReader.inspectStatus(), forceLog);
+    }
+
+    private void setJitLogStatus(JitLogStatus nextStatus, boolean forceLog) {
+        jitLogStatus = nextStatus;
+        String nextStatusKey = nextStatus.getStatusKey();
+        if (forceLog || !nextStatusKey.equals(lastJitLogStatusKey)) {
+            frame.getLogPanel().appendInfo(nextStatus.formatLogMessage());
+            lastJitLogStatusKey = nextStatusKey;
+        }
     }
 }

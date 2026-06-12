@@ -8,6 +8,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import wava.model.JavaProcessInfo;
 import wava.model.JitEventSummary;
+import wava.model.JitLogStatus;
 import wava.model.JitMethodCount;
 import wava.model.MetricSample;
 import wava.model.MonitorState;
@@ -56,6 +57,8 @@ public class SummaryPanel extends JPanel {
             List<MetricSample> samples,
             WarmupSummary summary,
             WarmupStabilityPoint stabilityPoint,
+            JitLogStatus jitLogStatus,
+            String jitFilterText,
             JitEventSummary jitSummary) {
         if (process == null || samples.isEmpty()) {
             showSelectedProcess(process);
@@ -72,6 +75,8 @@ public class SummaryPanel extends JPanel {
                 + formatWarmupSummary(summary) + System.lineSeparator()
                 + System.lineSeparator()
                 + formatStabilityPoint(stabilityPoint) + System.lineSeparator()
+                + System.lineSeparator()
+                + formatJitLogStatus(jitLogStatus, jitFilterText) + System.lineSeparator()
                 + System.lineSeparator()
                 + formatJitSummary(jitSummary));
     }
@@ -102,6 +107,14 @@ public class SummaryPanel extends JPanel {
                 + "Estimated stable point: sample " + point.getSampleIndex() + System.lineSeparator()
                 + "CPU range: " + formatValue(point.getCpuRangePercent()) + " %" + System.lineSeparator()
                 + "JIT events in window: " + point.getJitEventCount();
+    }
+
+    private String formatJitLogStatus(JitLogStatus status, String filterText) {
+        return "JIT Log Status" + System.lineSeparator()
+                + "State: " + status.getStateLabel() + System.lineSeparator()
+                + "Path: " + status.getLogPath() + System.lineSeparator()
+                + "Filter: " + formatFilterText(filterText) + System.lineSeparator()
+                + "Detail: " + status.getDetail();
     }
 
     private String formatJitSummary(JitEventSummary summary) {
@@ -145,5 +158,12 @@ public class SummaryPanel extends JPanel {
 
     private String formatSignedValue(double value) {
         return String.format("%+.2f", value);
+    }
+
+    private String formatFilterText(String filterText) {
+        if (filterText == null || filterText.isBlank()) {
+            return "<none>";
+        }
+        return filterText;
     }
 }

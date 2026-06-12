@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import wava.model.JitEvent;
+import wava.model.JitLogStatus;
 
 public class JitLogReader {
     private static final Path DEFAULT_LOG_PATH = Path.of("logs", "jit.log");
@@ -56,6 +57,20 @@ public class JitLogReader {
 
     public Path getLogPath() {
         return logPath;
+    }
+
+    public JitLogStatus inspectStatus() {
+        if (!Files.exists(logPath)) {
+            return JitLogStatus.missing(logPath);
+        }
+        if (!Files.isRegularFile(logPath) || !Files.isReadable(logPath)) {
+            return JitLogStatus.unreadable(logPath);
+        }
+        try {
+            return JitLogStatus.ready(logPath, Files.size(logPath));
+        } catch (IOException exception) {
+            return JitLogStatus.readError(logPath, exception.getMessage());
+        }
     }
 
     public void setLogPath(Path logPath) {
