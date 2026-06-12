@@ -12,6 +12,7 @@ import wava.model.MetricSample;
 import wava.model.MonitorState;
 import wava.model.WarmupSummary;
 import wava.service.JavaProcessScanner;
+import wava.service.JitEventFilter;
 import wava.service.JitLogReader;
 import wava.service.MonitorService;
 import wava.service.WarmupAnalyzer;
@@ -24,6 +25,7 @@ public class MainController {
     private final JitLogReader jitLogReader;
     private final WarmupAnalyzer warmupAnalyzer;
     private final List<JitEvent> jitEvents;
+    private JitEventFilter jitEventFilter;
     private MonitorState monitorState;
     private JavaProcessInfo selectedProcess;
 
@@ -34,6 +36,7 @@ public class MainController {
         jitLogReader = new JitLogReader();
         warmupAnalyzer = new WarmupAnalyzer();
         jitEvents = new ArrayList<>();
+        jitEventFilter = new JitEventFilter("");
         monitorState = MonitorState.IDLE;
         bindActions();
         updateState(MonitorState.IDLE);
@@ -49,6 +52,7 @@ public class MainController {
         frame.getControlPanel().setResetAction(this::resetMonitoring);
         frame.getProcessPanel().setRefreshAction(this::refreshProcesses);
         frame.getProcessPanel().setSelectionAction(this::selectProcess);
+        frame.getLogPanel().setApplySettingsAction(this::applyJitSettings);
     }
 
     private void startMonitoring(ActionEvent event) {
@@ -134,7 +138,9 @@ public class MainController {
             List<JitEvent> events = jitLogReader.readNewEvents();
             for (JitEvent event : events) {
                 jitEvents.add(event);
-                frame.getLogPanel().appendJitEvent(event);
+                if (jitEventFilter.matches(event)) {
+                    frame.getLogPanel().appendJitEvent(event);
+                }
             }
         } catch (IOException exception) {
             frame.getLogPanel().appendInfo("Failed to read JIT log: " + exception.getMessage());
@@ -160,8 +166,19 @@ public class MainController {
     private List<GraphMarker> createGraphMarkers() {
         List<GraphMarker> markers = new ArrayList<>();
         for (JitEvent event : jitEvents) {
-            markers.add(new GraphMarker(event.getTimestampMillis(), "JIT"));
+            if (jitEventFilter.matches(event)) {
+                markers.add(new GraphMarker(event.getTimestampMillis(), "JIT"));
+            }
         }
         return markers;
+    }
+
+    private void applyJitSettings(ActionEvent event) {
+        jitLogReader.setLogPath(frame.getLogPanel().getLogPath());
+        jitEventFilter = new JitEventFilter(frame.getLogPanel().getFilterText());
+        jitEvents.clear();
+        frame.getCpuGraphPanel().setMarkers(List.of());
+        frame.getMemoryGraphPanel().setMarkers(List.of());
+        frame.getLogPanel().appendInfo("JIT settings applied. Log: " + jitLogReader.getLogPath());
     }
 }

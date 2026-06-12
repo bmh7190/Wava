@@ -18,7 +18,7 @@ public class JitLogReader {
             StandardCharsets.UTF_16LE,
             Charset.defaultCharset());
 
-    private final Path logPath;
+    private Path logPath;
     private final JitLogParser parser;
     private int nextLineIndex;
 
@@ -56,6 +56,11 @@ public class JitLogReader {
 
     public Path getLogPath() {
         return logPath;
+    }
+
+    public void setLogPath(Path logPath) {
+        this.logPath = logPath;
+        reset();
     }
 
     private List<String> readLines() throws IOException {

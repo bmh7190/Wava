@@ -12,6 +12,31 @@ public class JitLogReaderTest {
         readUtf16PowerShellLog();
         handleMissingLogFile();
         resetReadsFromBeginning();
+        changingPathResetsReader();
+    }
+
+    private static void changingPathResetsReader() throws Exception {
+        Path firstFile = Files.createTempFile("wava-jit-first", ".log");
+        Path secondFile = Files.createTempFile("wava-jit-second", ".log");
+        try {
+            Files.write(firstFile, List.of(
+                    "123  1       3       com.example.A::run (10 bytes)"),
+                    StandardCharsets.UTF_8);
+            Files.write(secondFile, List.of(
+                    "456  2       4       com.example.B::run (10 bytes)"),
+                    StandardCharsets.UTF_8);
+            JitLogReader reader = new JitLogReader(firstFile, new JitLogParser());
+
+            reader.readNewEvents();
+            reader.setLogPath(secondFile);
+            List<JitEvent> events = reader.readNewEvents();
+
+            assertEquals(1, events.size(), "changed path size");
+            assertEquals(2, events.get(0).getCompileId(), "changed path compile id");
+        } finally {
+            Files.deleteIfExists(firstFile);
+            Files.deleteIfExists(secondFile);
+        }
     }
 
     private static void readOnlyNewEvents() throws Exception {
