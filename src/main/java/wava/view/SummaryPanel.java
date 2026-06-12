@@ -6,15 +6,15 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import wava.model.JavaProcessInfo;
-import wava.model.JitEventSummary;
-import wava.model.JitLogStatus;
-import wava.model.JitMethodCount;
-import wava.model.MetricSample;
-import wava.model.MonitorState;
-import wava.model.TargetProcessStatus;
-import wava.model.WarmupStabilityPoint;
-import wava.model.WarmupSummary;
+import wava.model.process.JavaProcessInfo;
+import wava.model.jit.JitEventSummary;
+import wava.model.jit.JitLogStatus;
+import wava.model.jit.JitMethodCount;
+import wava.model.metric.MetricSample;
+import wava.model.monitor.MonitorState;
+import wava.model.process.TargetProcessStatus;
+import wava.model.warmup.WarmupStabilityPoint;
+import wava.model.warmup.WarmupSummary;
 
 public class SummaryPanel extends JPanel {
     private final JLabel stateLabel;

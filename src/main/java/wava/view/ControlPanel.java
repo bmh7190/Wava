@@ -5,7 +5,7 @@ import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import wava.model.MonitorState;
+import wava.model.monitor.MonitorState;
 
 public class ControlPanel extends JPanel {
     private final JButton startButton;

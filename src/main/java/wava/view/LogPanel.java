@@ -11,7 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import wava.model.JitEvent;
+import wava.model.jit.JitEvent;
 
 public class LogPanel extends JPanel {
     private final JTextArea logArea;

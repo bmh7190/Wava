@@ -10,11 +10,11 @@ import java.awt.RenderingHints;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JPanel;
-import wava.model.GraphMarker;
-import wava.model.GraphScale;
-import wava.model.GraphScaleMode;
-import wava.model.GraphTimeline;
-import wava.model.MetricSample;
+import wava.model.graph.GraphMarker;
+import wava.model.graph.GraphScale;
+import wava.model.graph.GraphScaleMode;
+import wava.model.graph.GraphTimeline;
+import wava.model.metric.MetricSample;
 
 public class GraphPanel extends JPanel {
     private static final int PREFERRED_HEIGHT = 220;

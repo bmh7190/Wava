@@ -8,7 +8,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.border.EmptyBorder;
-import wava.model.GraphScaleMode;
+import wava.model.graph.GraphScaleMode;
 
 public class WavaFrame extends JFrame {
     private static final int DEFAULT_WIDTH = 1100;

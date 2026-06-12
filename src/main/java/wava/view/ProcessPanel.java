@@ -12,7 +12,7 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
-import wava.model.JavaProcessInfo;
+import wava.model.process.JavaProcessInfo;
 
 public class ProcessPanel extends JPanel {
     private static final int PREFERRED_WIDTH = 260;
