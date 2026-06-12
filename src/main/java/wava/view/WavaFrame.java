@@ -14,8 +14,7 @@ public class WavaFrame extends JFrame {
     private static final int DEFAULT_WIDTH = 1100;
     private static final int DEFAULT_HEIGHT = 720;
     private static final int LEFT_PANEL_WIDTH = 260;
-    private static final int PROCESS_PANEL_HEIGHT = 260;
-    private static final int SUMMARY_PANEL_HEIGHT = 180;
+    private static final int BOTTOM_PANEL_HEIGHT = 180;
 
     private final ProcessPanel processPanel;
     private final ControlPanel controlPanel;
@@ -68,22 +67,24 @@ public class WavaFrame extends JFrame {
         return splitPane;
     }
 
-    private JSplitPane createLeftPanel() {
-        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, processPanel, logPanel);
-        splitPane.setBorder(null);
-        splitPane.setDividerSize(8);
-        splitPane.setResizeWeight(0.0);
-        splitPane.setDividerLocation(PROCESS_PANEL_HEIGHT);
-        splitPane.setPreferredSize(new Dimension(LEFT_PANEL_WIDTH, 0));
-        return splitPane;
+    private JPanel createLeftPanel() {
+        JPanel panel = new JPanel(new BorderLayout(0, 12));
+        panel.setOpaque(false);
+        panel.setPreferredSize(new Dimension(LEFT_PANEL_WIDTH, 0));
+
+        JPanel settingsPanel = logPanel.getSettingsPanel();
+        settingsPanel.setPreferredSize(new Dimension(LEFT_PANEL_WIDTH, BOTTOM_PANEL_HEIGHT));
+
+        panel.add(processPanel, BorderLayout.CENTER);
+        panel.add(settingsPanel, BorderLayout.SOUTH);
+        return panel;
     }
 
     private JPanel createRightPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 12));
         panel.setOpaque(false);
         panel.add(createCenterPanel(), BorderLayout.CENTER);
-        summaryPanel.setPreferredSize(new Dimension(0, SUMMARY_PANEL_HEIGHT));
-        panel.add(summaryPanel, BorderLayout.SOUTH);
+        panel.add(createBottomPanel(), BorderLayout.SOUTH);
         return panel;
     }
 
@@ -96,6 +97,15 @@ public class WavaFrame extends JFrame {
         graphPanel.add(memoryGraphPanel);
         panel.add(controlPanel, BorderLayout.NORTH);
         panel.add(graphPanel, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel createBottomPanel() {
+        JPanel panel = new JPanel(new GridLayout(1, 2, 8, 0));
+        panel.setOpaque(false);
+        panel.setPreferredSize(new Dimension(0, BOTTOM_PANEL_HEIGHT));
+        panel.add(logPanel);
+        panel.add(summaryPanel);
         return panel;
     }
 

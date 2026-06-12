@@ -11,7 +11,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.border.EmptyBorder;
 import wava.model.JitEvent;
 
 public class LogPanel extends JPanel {
@@ -20,6 +19,7 @@ public class LogPanel extends JPanel {
     private final JTextField filterField;
     private final JButton applyButton;
     private final JButton browseButton;
+    private final JPanel settingsPanel;
 
     public LogPanel() {
         super(new BorderLayout(0, 6));
@@ -39,7 +39,7 @@ public class LogPanel extends JPanel {
         JButton clearButton = new JButton("Clear Log");
         clearButton.addActionListener(event -> clear());
 
-        add(createSettingsPanel(), BorderLayout.NORTH);
+        settingsPanel = createSettingsPanel();
         add(new JScrollPane(logArea), BorderLayout.CENTER);
         add(clearButton, BorderLayout.SOUTH);
     }
@@ -77,12 +77,21 @@ public class LogPanel extends JPanel {
         logPathField.setText(path.toString());
     }
 
+    public JPanel getSettingsPanel() {
+        return settingsPanel;
+    }
+
     private JPanel createSettingsPanel() {
-        JPanel panel = new JPanel(new GridLayout(3, 1, 0, 4));
-        panel.setOpaque(false);
-        panel.add(createPathPanel());
-        panel.add(createFilterPanel());
-        panel.add(applyButton);
+        JPanel panel = new JPanel(new BorderLayout());
+        UiStyle.applyPanelStyle(panel, "JIT Settings");
+
+        JPanel formPanel = new JPanel(new GridLayout(3, 1, 0, 4));
+        formPanel.setOpaque(false);
+        formPanel.add(createPathPanel());
+        formPanel.add(createFilterPanel());
+        formPanel.add(applyButton);
+
+        panel.add(formPanel, BorderLayout.NORTH);
         return panel;
     }
 
