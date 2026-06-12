@@ -21,13 +21,13 @@ public class GraphPanel extends JPanel {
     private static final int PREFERRED_HEIGHT = 220;
     private static final int LEFT_PADDING = 64;
     private static final int RIGHT_PADDING = 24;
-    private static final int TOP_PADDING = 34;
+    private static final int TOP_PADDING = 44;
     private static final int BOTTOM_PADDING = 34;
+    private static final int AXIS_LABEL_GAP = 12;
     private static final int TICK_COUNT = 5;
     private static final int POINT_RADIUS = 4;
     private static final GraphScale CPU_SCALE = GraphScale.fixed(0.0, 100.0);
 
-    private final String title;
     private final String unit;
     private final GraphScaleMode scaleMode;
     private final List<Double> values;
@@ -35,7 +35,6 @@ public class GraphPanel extends JPanel {
     private final List<GraphMarker> markers;
 
     public GraphPanel(String title, String unit, GraphScaleMode scaleMode) {
-        this.title = title;
         this.unit = unit;
         this.scaleMode = scaleMode;
         values = new ArrayList<>();
@@ -80,7 +79,6 @@ public class GraphPanel extends JPanel {
         super.paintComponent(graphics);
         Graphics2D g2 = (Graphics2D) graphics.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        drawTitle(g2);
         GraphScale scale = createScale();
         drawPlotArea(g2, scale);
         if (values.isEmpty()) {
@@ -91,11 +89,6 @@ public class GraphPanel extends JPanel {
             drawLatestValue(g2);
         }
         g2.dispose();
-    }
-
-    private void drawTitle(Graphics2D g2) {
-        g2.setColor(UiStyle.TEXT);
-        g2.drawString(title, LEFT_PADDING, 18);
     }
 
     private void drawPlotArea(Graphics2D g2, GraphScale scale) {
@@ -109,26 +102,39 @@ public class GraphPanel extends JPanel {
         g2.setColor(UiStyle.BORDER);
         g2.drawRect(left, top, right - left, bottom - top);
         g2.setColor(UiStyle.MUTED_TEXT);
-        g2.drawString(unit, 14, top + 12);
+        drawAxisUnit(g2, left, top);
         drawGridLines(g2, scale, left, top, right, bottom);
     }
 
+    private void drawAxisUnit(Graphics2D g2, int left, int top) {
+        FontMetrics metrics = g2.getFontMetrics();
+        int x = left - AXIS_LABEL_GAP - metrics.stringWidth(unit);
+        g2.drawString(unit, x, top - 8);
+    }
+
     private void drawGridLines(Graphics2D g2, GraphScale scale, int left, int top, int right, int bottom) {
+        FontMetrics metrics = g2.getFontMetrics();
         for (int tickIndex = 0; tickIndex < TICK_COUNT; tickIndex++) {
             int y = top + (bottom - top) * tickIndex / (TICK_COUNT - 1);
             double value = scale.getTickValue(TICK_COUNT - 1 - tickIndex, TICK_COUNT);
             g2.setColor(new Color(226, 232, 240));
             g2.drawLine(left, y, right, y);
             g2.setColor(UiStyle.MUTED_TEXT);
-            g2.drawString(formatValue(value), 8, y + 4);
+            String label = formatValue(value);
+            int x = left - AXIS_LABEL_GAP - metrics.stringWidth(label);
+            g2.drawString(label, x, y + 4);
         }
     }
 
     private void drawEmptyMessage(Graphics2D g2) {
         String message = "Waiting for data";
         FontMetrics metrics = g2.getFontMetrics();
-        int x = (getWidth() - metrics.stringWidth(message)) / 2;
-        int y = getHeight() / 2;
+        int left = LEFT_PADDING;
+        int top = TOP_PADDING;
+        int right = getWidth() - RIGHT_PADDING;
+        int bottom = getHeight() - BOTTOM_PADDING;
+        int x = left + (right - left - metrics.stringWidth(message)) / 2;
+        int y = top + (bottom - top) / 2;
         g2.setColor(new Color(105, 105, 105));
         g2.drawString(message, x, y);
     }
@@ -188,9 +194,10 @@ public class GraphPanel extends JPanel {
         double latestValue = values.get(values.size() - 1);
         String label = "Latest: " + formatValue(latestValue) + " " + unit;
         FontMetrics metrics = g2.getFontMetrics();
-        int x = getWidth() - RIGHT_PADDING - metrics.stringWidth(label);
+        int right = getWidth() - RIGHT_PADDING;
+        int x = right - metrics.stringWidth(label);
         g2.setColor(UiStyle.TEXT);
-        g2.drawString(label, x, 18);
+        g2.drawString(label, x, TOP_PADDING - 8);
     }
 
     private int calculateX(int index, int left, int right) {
