@@ -16,7 +16,7 @@ import javax.swing.border.EmptyBorder;
 import wava.model.JavaProcessInfo;
 
 public class ProcessPanel extends JPanel {
-    private static final int PREFERRED_WIDTH = 300;
+    private static final int PREFERRED_WIDTH = 260;
 
     private final JButton refreshButton;
     private final JLabel statusLabel;

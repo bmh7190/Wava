@@ -13,8 +13,9 @@ import wava.model.GraphScaleMode;
 public class WavaFrame extends JFrame {
     private static final int DEFAULT_WIDTH = 1100;
     private static final int DEFAULT_HEIGHT = 720;
-    private static final int PROCESS_PANEL_WIDTH = 300;
-    private static final int BOTTOM_PANEL_HEIGHT = 230;
+    private static final int LEFT_PANEL_WIDTH = 260;
+    private static final int PROCESS_PANEL_HEIGHT = 260;
+    private static final int SUMMARY_PANEL_HEIGHT = 180;
 
     private final ProcessPanel processPanel;
     private final ControlPanel controlPanel;
@@ -40,9 +41,9 @@ public class WavaFrame extends JFrame {
     }
 
     private JPanel createContentPane() {
-        JPanel panel = new JPanel(new BorderLayout(12, 12));
+        JPanel panel = new JPanel(new BorderLayout(8, 8));
         panel.setBackground(UiStyle.BACKGROUND);
-        panel.setBorder(new EmptyBorder(12, 12, 12, 12));
+        panel.setBorder(new EmptyBorder(8, 4, 8, 8));
         panel.add(createHeaderPanel(), BorderLayout.NORTH);
         panel.add(createMainSplitPane(), BorderLayout.CENTER);
         return panel;
@@ -59,11 +60,21 @@ public class WavaFrame extends JFrame {
     }
 
     private JSplitPane createMainSplitPane() {
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, processPanel, createRightPanel());
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, createLeftPanel(), createRightPanel());
         splitPane.setBorder(null);
         splitPane.setDividerSize(8);
         splitPane.setResizeWeight(0.0);
-        splitPane.setDividerLocation(PROCESS_PANEL_WIDTH);
+        splitPane.setDividerLocation(LEFT_PANEL_WIDTH);
+        return splitPane;
+    }
+
+    private JSplitPane createLeftPanel() {
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, processPanel, logPanel);
+        splitPane.setBorder(null);
+        splitPane.setDividerSize(8);
+        splitPane.setResizeWeight(0.0);
+        splitPane.setDividerLocation(PROCESS_PANEL_HEIGHT);
+        splitPane.setPreferredSize(new Dimension(LEFT_PANEL_WIDTH, 0));
         return splitPane;
     }
 
@@ -71,7 +82,8 @@ public class WavaFrame extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(0, 12));
         panel.setOpaque(false);
         panel.add(createCenterPanel(), BorderLayout.CENTER);
-        panel.add(createBottomPanel(), BorderLayout.SOUTH);
+        summaryPanel.setPreferredSize(new Dimension(0, SUMMARY_PANEL_HEIGHT));
+        panel.add(summaryPanel, BorderLayout.SOUTH);
         return panel;
     }
 
@@ -84,15 +96,6 @@ public class WavaFrame extends JFrame {
         graphPanel.add(memoryGraphPanel);
         panel.add(controlPanel, BorderLayout.NORTH);
         panel.add(graphPanel, BorderLayout.CENTER);
-        return panel;
-    }
-
-    private JPanel createBottomPanel() {
-        JPanel panel = new JPanel(new GridLayout(1, 2, 8, 0));
-        panel.setOpaque(false);
-        panel.setPreferredSize(new Dimension(0, BOTTOM_PANEL_HEIGHT));
-        panel.add(logPanel);
-        panel.add(summaryPanel);
         return panel;
     }
 
