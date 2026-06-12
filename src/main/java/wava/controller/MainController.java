@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.SwingUtilities;
+import wava.model.GraphMarker;
 import wava.model.JavaProcessInfo;
 import wava.model.JitEvent;
 import wava.model.MetricSample;
@@ -19,6 +20,7 @@ public class MainController {
     private final JavaProcessScanner processScanner;
     private final MonitorService monitorService;
     private final JitLogReader jitLogReader;
+    private final List<JitEvent> jitEvents;
     private MonitorState monitorState;
     private JavaProcessInfo selectedProcess;
 
@@ -27,6 +29,7 @@ public class MainController {
         processScanner = new JavaProcessScanner();
         monitorService = new MonitorService();
         jitLogReader = new JitLogReader();
+        jitEvents = new ArrayList<>();
         monitorState = MonitorState.IDLE;
         bindActions();
         updateState(MonitorState.IDLE);
@@ -52,6 +55,7 @@ public class MainController {
         }
         updateState(MonitorState.RUNNING);
         jitLogReader.reset();
+        jitEvents.clear();
         monitorService.start(selectedProcess, this::showMetricSamples);
         frame.getLogPanel().appendInfo("Monitoring started for " + selectedProcess.formatListItem() + ".");
         frame.getLogPanel().appendInfo("Reading JIT log from " + jitLogReader.getLogPath() + ".");
@@ -66,6 +70,7 @@ public class MainController {
     private void resetMonitoring(ActionEvent event) {
         monitorService.reset();
         jitLogReader.reset();
+        jitEvents.clear();
         updateState(MonitorState.IDLE);
         frame.getLogPanel().clear();
         frame.getLogPanel().appendInfo("Monitoring data reset.");
@@ -109,10 +114,13 @@ public class MainController {
 
     private void showMetricSamples(List<MetricSample> samples) {
         SwingUtilities.invokeLater(() -> {
-            frame.getCpuGraphPanel().setValues(extractCpuValues(samples));
-            frame.getMemoryGraphPanel().setValues(extractMemoryValues(samples));
-            frame.getSummaryPanel().showMonitoringSummary(selectedProcess, samples);
             showJitEvents();
+            List<GraphMarker> markers = createGraphMarkers();
+            frame.getCpuGraphPanel().setSamples(samples, extractCpuValues(samples));
+            frame.getCpuGraphPanel().setMarkers(markers);
+            frame.getMemoryGraphPanel().setSamples(samples, extractMemoryValues(samples));
+            frame.getMemoryGraphPanel().setMarkers(markers);
+            frame.getSummaryPanel().showMonitoringSummary(selectedProcess, samples);
         });
     }
 
@@ -120,6 +128,7 @@ public class MainController {
         try {
             List<JitEvent> events = jitLogReader.readNewEvents();
             for (JitEvent event : events) {
+                jitEvents.add(event);
                 frame.getLogPanel().appendJitEvent(event);
             }
         } catch (IOException exception) {
@@ -141,5 +150,13 @@ public class MainController {
             values.add(sample.getHeapUsedMb());
         }
         return values;
+    }
+
+    private List<GraphMarker> createGraphMarkers() {
+        List<GraphMarker> markers = new ArrayList<>();
+        for (JitEvent event : jitEvents) {
+            markers.add(new GraphMarker(event.getTimestampMillis(), "JIT"));
+        }
+        return markers;
     }
 }
