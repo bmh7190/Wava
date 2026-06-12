@@ -9,6 +9,7 @@ public class WarmupAnalyzerTest {
     public static void main(String[] args) {
         returnUnavailableWhenSamplesAreNotEnough();
         compareEarlyAndLateAverages();
+        ignoreUnavailableHeapSamples();
     }
 
     private static void returnUnavailableWhenSamplesAreNotEnough() {
@@ -31,6 +32,18 @@ public class WarmupAnalyzerTest {
         assertEquals(8.0, summary.getLateAverageCpu(), "late cpu");
         assertEquals(101.0, summary.getEarlyAverageHeap(), "early heap");
         assertEquals(108.0, summary.getLateAverageHeap(), "late heap");
+    }
+
+    private static void ignoreUnavailableHeapSamples() {
+        WarmupAnalyzer analyzer = new WarmupAnalyzer();
+        List<MetricSample> samples = samples(10);
+        samples.set(0, new MetricSample(0L, 0.0, 100.0, false));
+        samples.set(7, new MetricSample(7L, 7.0, 107.0, false));
+
+        WarmupSummary summary = analyzer.analyze(samples);
+
+        assertEquals(101.5, summary.getEarlyAverageHeap(), "early heap");
+        assertEquals(108.5, summary.getLateAverageHeap(), "late heap");
     }
 
     private static List<MetricSample> samples(int count) {

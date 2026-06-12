@@ -11,7 +11,7 @@ import wava.model.JitEvent;
 import wava.model.MetricSample;
 
 public class CsvExportService {
-    private static final String HEADER = "timestampMillis,cpuUsagePercent,heapUsedMb,jitEventCount";
+    private static final String HEADER = "timestampMillis,cpuUsagePercent,heapUsedMb,heapAvailable,jitEventCount";
 
     public Path export(
             List<MetricSample> samples,
@@ -38,10 +38,11 @@ public class CsvExportService {
     private String formatRow(MetricSample sample, int jitEventCount) {
         return String.format(
                 Locale.US,
-                "%d,%.4f,%.4f,%d",
+                "%d,%.4f,%.4f,%s,%d",
                 sample.getTimestampMillis(),
                 sample.getCpuUsagePercent(),
                 sample.getHeapUsedMb(),
+                sample.isHeapAvailable(),
                 jitEventCount);
     }
 

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import javax.management.MBeanServerConnection;
+import wava.model.HeapMemorySnapshot;
 import wava.model.JavaProcessInfo;
 
 public class TargetJvmMemoryReader implements HeapMemoryReader {
@@ -18,16 +19,16 @@ public class TargetJvmMemoryReader implements HeapMemoryReader {
     }
 
     @Override
-    public double readHeapUsedMb(JavaProcessInfo targetProcess) {
+    public HeapMemorySnapshot readHeapMemory(JavaProcessInfo targetProcess) {
         if (targetProcess == null) {
-            return 0.0;
+            return HeapMemorySnapshot.unavailable();
         }
 
         try (TargetJvmConnection connection = connector.connect(targetProcess.getPid())) {
             MemoryMXBean memoryBean = createMemoryBean(connection.getMBeanServerConnection());
-            return MemoryUnit.bytesToMb(memoryBean.getHeapMemoryUsage().getUsed());
+            return HeapMemorySnapshot.available(MemoryUnit.bytesToMb(memoryBean.getHeapMemoryUsage().getUsed()));
         } catch (IOException exception) {
-            return 0.0;
+            return HeapMemorySnapshot.unavailable();
         }
     }
 

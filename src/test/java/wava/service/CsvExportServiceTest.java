@@ -20,10 +20,10 @@ public class CsvExportServiceTest {
         service.export(samples(), events(), new JitEventFilter("Target"), outputPath);
 
         List<String> lines = Files.readAllLines(outputPath);
-        assertEquals("timestampMillis,cpuUsagePercent,heapUsedMb,jitEventCount", lines.get(0), "header");
-        assertEquals("1000,12.3456,100.0000,1", lines.get(1), "first row");
-        assertEquals("2000,5.0000,110.5000,1", lines.get(2), "second row");
-        assertEquals("3000,2.0000,120.0000,1", lines.get(3), "third row");
+        assertEquals("timestampMillis,cpuUsagePercent,heapUsedMb,heapAvailable,jitEventCount", lines.get(0), "header");
+        assertEquals("1000,12.3456,100.0000,true,1", lines.get(1), "first row");
+        assertEquals("2000,5.0000,110.5000,false,1", lines.get(2), "second row");
+        assertEquals("3000,2.0000,120.0000,true,1", lines.get(3), "third row");
 
         Files.deleteIfExists(outputPath);
     }
@@ -44,7 +44,7 @@ public class CsvExportServiceTest {
     private static List<MetricSample> samples() {
         return List.of(
                 new MetricSample(1000L, 12.3456, 100.0),
-                new MetricSample(2000L, 5.0, 110.5),
+                new MetricSample(2000L, 5.0, 110.5, false),
                 new MetricSample(3000L, 2.0, 120.0));
     }
 

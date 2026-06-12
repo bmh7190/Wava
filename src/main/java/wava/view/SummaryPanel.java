@@ -73,7 +73,7 @@ public class SummaryPanel extends JPanel {
                 + "Target status: " + targetProcessStatus.getLabel() + System.lineSeparator()
                 + "Samples: " + samples.size() + System.lineSeparator()
                 + "CPU: " + formatValue(latestSample.getCpuUsagePercent()) + " %" + System.lineSeparator()
-                + "Heap: " + formatValue(latestSample.getHeapUsedMb()) + " MB" + System.lineSeparator()
+                + "Heap: " + formatHeapValue(latestSample) + System.lineSeparator()
                 + System.lineSeparator()
                 + formatWarmupSummary(summary) + System.lineSeparator()
                 + System.lineSeparator()
@@ -157,6 +157,13 @@ public class SummaryPanel extends JPanel {
 
     private String formatValue(double value) {
         return String.format("%.2f", value);
+    }
+
+    private String formatHeapValue(MetricSample sample) {
+        if (!sample.isHeapAvailable()) {
+            return "Unavailable";
+        }
+        return formatValue(sample.getHeapUsedMb()) + " MB";
     }
 
     private String formatSignedValue(double value) {

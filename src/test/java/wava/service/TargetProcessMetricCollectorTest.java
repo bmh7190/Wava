@@ -1,11 +1,13 @@
 package wava.service;
 
 import wava.model.JavaProcessInfo;
+import wava.model.HeapMemorySnapshot;
 import wava.model.MetricSample;
 
 public class TargetProcessMetricCollectorTest {
     public static void main(String[] args) {
         useHeapReaderValue();
+        markHeapUnavailableWhenReaderFails();
     }
 
     private static void useHeapReaderValue() {
@@ -17,6 +19,19 @@ public class TargetProcessMetricCollectorTest {
         MetricSample sample = collector.collect(process, 0);
 
         assertEquals(256.5, sample.getHeapUsedMb(), "heap value");
+        assertTrue(sample.isHeapAvailable(), "heap availability");
+    }
+
+    private static void markHeapUnavailableWhenReaderFails() {
+        TargetProcessMetricCollector collector = new TargetProcessMetricCollector(
+                new ProcessCpuTracker(),
+                new FixedHeapMemoryReader(HeapMemorySnapshot.unavailable()));
+        JavaProcessInfo process = new JavaProcessInfo(-1L, "missing.Process");
+
+        MetricSample sample = collector.collect(process, 0);
+
+        assertEquals(0.0, sample.getHeapUsedMb(), "heap value");
+        assertTrue(!sample.isHeapAvailable(), "heap availability");
     }
 
     private static void assertEquals(double expected, double actual, String label) {
@@ -26,15 +41,25 @@ public class TargetProcessMetricCollectorTest {
     }
 
     private static class FixedHeapMemoryReader implements HeapMemoryReader {
-        private final double heapUsedMb;
+        private final HeapMemorySnapshot snapshot;
 
         private FixedHeapMemoryReader(double heapUsedMb) {
-            this.heapUsedMb = heapUsedMb;
+            this(HeapMemorySnapshot.available(heapUsedMb));
+        }
+
+        private FixedHeapMemoryReader(HeapMemorySnapshot snapshot) {
+            this.snapshot = snapshot;
         }
 
         @Override
-        public double readHeapUsedMb(JavaProcessInfo targetProcess) {
-            return heapUsedMb;
+        public HeapMemorySnapshot readHeapMemory(JavaProcessInfo targetProcess) {
+            return snapshot;
+        }
+    }
+
+    private static void assertTrue(boolean condition, String label) {
+        if (!condition) {
+            throw new AssertionError(label + " expected true");
         }
     }
 }

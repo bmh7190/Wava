@@ -2,6 +2,7 @@ package wava.service;
 
 import java.time.Duration;
 import java.util.Optional;
+import wava.model.HeapMemorySnapshot;
 import wava.model.JavaProcessInfo;
 import wava.model.MetricSample;
 import wava.model.ProcessCpuSnapshot;
@@ -23,8 +24,8 @@ public class TargetProcessMetricCollector implements MetricCollector {
     public MetricSample collect(JavaProcessInfo targetProcess, int sampleIndex) {
         long timestamp = System.currentTimeMillis();
         double cpuUsage = readTargetCpuUsage(targetProcess, timestamp);
-        double heapUsedMb = heapMemoryReader.readHeapUsedMb(targetProcess);
-        return new MetricSample(timestamp, cpuUsage, heapUsedMb);
+        HeapMemorySnapshot heapMemory = heapMemoryReader.readHeapMemory(targetProcess);
+        return new MetricSample(timestamp, cpuUsage, heapMemory.getUsedMb(), heapMemory.isAvailable());
     }
 
     private double readTargetCpuUsage(JavaProcessInfo targetProcess, long timestamp) {

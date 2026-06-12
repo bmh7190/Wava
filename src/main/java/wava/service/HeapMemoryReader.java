@@ -1,7 +1,8 @@
 package wava.service;
 
 import wava.model.JavaProcessInfo;
+import wava.model.HeapMemorySnapshot;
 
 public interface HeapMemoryReader {
-    double readHeapUsedMb(JavaProcessInfo targetProcess);
+    HeapMemorySnapshot readHeapMemory(JavaProcessInfo targetProcess);
 }

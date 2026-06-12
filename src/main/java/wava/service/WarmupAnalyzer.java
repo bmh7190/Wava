@@ -34,6 +34,7 @@ public class WarmupAnalyzer {
 
     private double averageHeap(List<MetricSample> samples) {
         return samples.stream()
+                .filter(MetricSample::isHeapAvailable)
                 .mapToDouble(MetricSample::getHeapUsedMb)
                 .average()
                 .orElse(0.0);
