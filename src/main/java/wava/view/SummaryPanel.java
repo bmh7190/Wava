@@ -9,6 +9,7 @@ import javax.swing.border.EmptyBorder;
 import wava.model.JavaProcessInfo;
 import wava.model.MetricSample;
 import wava.model.MonitorState;
+import wava.model.WarmupSummary;
 
 public class SummaryPanel extends JPanel {
     private final JLabel stateLabel;
@@ -46,7 +47,7 @@ public class SummaryPanel extends JPanel {
                 + "Name: " + process.getDisplayName());
     }
 
-    public void showMonitoringSummary(JavaProcessInfo process, List<MetricSample> samples) {
+    public void showMonitoringSummary(JavaProcessInfo process, List<MetricSample> samples, WarmupSummary summary) {
         if (process == null || samples.isEmpty()) {
             showSelectedProcess(process);
             return;
@@ -57,10 +58,31 @@ public class SummaryPanel extends JPanel {
                 + "Name: " + process.getDisplayName() + System.lineSeparator()
                 + "Samples: " + samples.size() + System.lineSeparator()
                 + "CPU: " + formatValue(latestSample.getCpuUsagePercent()) + " %" + System.lineSeparator()
-                + "Heap: " + formatValue(latestSample.getHeapUsedMb()) + " MB");
+                + "Heap: " + formatValue(latestSample.getHeapUsedMb()) + " MB" + System.lineSeparator()
+                + System.lineSeparator()
+                + formatWarmupSummary(summary));
+    }
+
+    private String formatWarmupSummary(WarmupSummary summary) {
+        if (!summary.isAvailable()) {
+            return "Warm-up Summary" + System.lineSeparator()
+                    + "Collect more samples. Current: " + summary.getSampleCount();
+        }
+
+        return "Warm-up Summary" + System.lineSeparator()
+                + "CPU early avg: " + formatValue(summary.getEarlyAverageCpu()) + " %" + System.lineSeparator()
+                + "CPU late avg: " + formatValue(summary.getLateAverageCpu()) + " %" + System.lineSeparator()
+                + "CPU change: " + formatSignedValue(summary.getCpuChange()) + " %" + System.lineSeparator()
+                + "Heap early avg: " + formatValue(summary.getEarlyAverageHeap()) + " MB" + System.lineSeparator()
+                + "Heap late avg: " + formatValue(summary.getLateAverageHeap()) + " MB" + System.lineSeparator()
+                + "Heap change: " + formatSignedValue(summary.getHeapChange()) + " MB";
     }
 
     private String formatValue(double value) {
         return String.format("%.2f", value);
+    }
+
+    private String formatSignedValue(double value) {
+        return String.format("%+.2f", value);
     }
 }

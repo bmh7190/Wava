@@ -10,9 +10,11 @@ import wava.model.JavaProcessInfo;
 import wava.model.JitEvent;
 import wava.model.MetricSample;
 import wava.model.MonitorState;
+import wava.model.WarmupSummary;
 import wava.service.JavaProcessScanner;
 import wava.service.JitLogReader;
 import wava.service.MonitorService;
+import wava.service.WarmupAnalyzer;
 import wava.view.WavaFrame;
 
 public class MainController {
@@ -20,6 +22,7 @@ public class MainController {
     private final JavaProcessScanner processScanner;
     private final MonitorService monitorService;
     private final JitLogReader jitLogReader;
+    private final WarmupAnalyzer warmupAnalyzer;
     private final List<JitEvent> jitEvents;
     private MonitorState monitorState;
     private JavaProcessInfo selectedProcess;
@@ -29,6 +32,7 @@ public class MainController {
         processScanner = new JavaProcessScanner();
         monitorService = new MonitorService();
         jitLogReader = new JitLogReader();
+        warmupAnalyzer = new WarmupAnalyzer();
         jitEvents = new ArrayList<>();
         monitorState = MonitorState.IDLE;
         bindActions();
@@ -120,7 +124,8 @@ public class MainController {
             frame.getCpuGraphPanel().setMarkers(markers);
             frame.getMemoryGraphPanel().setSamples(samples, extractMemoryValues(samples));
             frame.getMemoryGraphPanel().setMarkers(markers);
-            frame.getSummaryPanel().showMonitoringSummary(selectedProcess, samples);
+            WarmupSummary summary = warmupAnalyzer.analyze(samples);
+            frame.getSummaryPanel().showMonitoringSummary(selectedProcess, samples, summary);
         });
     }
 
