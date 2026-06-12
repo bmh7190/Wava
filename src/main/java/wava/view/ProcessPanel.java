@@ -26,14 +26,16 @@ public class ProcessPanel extends JPanel {
 
     public ProcessPanel() {
         super(new BorderLayout(0, 8));
-        setBorder(new EmptyBorder(8, 8, 8, 8));
         setPreferredSize(new Dimension(PREFERRED_WIDTH, 0));
+        UiStyle.applyPanelStyle(this, "Java Processes");
 
         refreshButton = new JButton("Refresh Processes");
         statusLabel = new JLabel("No process loaded");
+        statusLabel.setForeground(UiStyle.MUTED_TEXT);
         processListModel = new DefaultListModel<>();
         processList = new JList<>(processListModel);
         processList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        processList.setVisibleRowCount(12);
         processList.addListSelectionListener(event -> notifySelectionChanged());
 
         add(createHeaderPanel(), BorderLayout.NORTH);
@@ -71,6 +73,7 @@ public class ProcessPanel extends JPanel {
 
     private JPanel createHeaderPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 6));
+        panel.setOpaque(false);
         panel.add(refreshButton, BorderLayout.NORTH);
         panel.add(statusLabel, BorderLayout.SOUTH);
         return panel;

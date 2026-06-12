@@ -17,9 +17,10 @@ public class SummaryPanel extends JPanel {
 
     public SummaryPanel() {
         super(new BorderLayout(0, 6));
-        setBorder(new EmptyBorder(8, 8, 8, 8));
+        UiStyle.applyPanelStyle(this, "Summary");
 
         stateLabel = new JLabel();
+        stateLabel.setForeground(UiStyle.MUTED_TEXT);
         summaryArea = new JTextArea();
         summaryArea.setEditable(false);
         summaryArea.setRows(8);

@@ -5,7 +5,6 @@ import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
 import wava.model.MonitorState;
 
 public class ControlPanel extends JPanel {
@@ -16,7 +15,7 @@ public class ControlPanel extends JPanel {
 
     public ControlPanel() {
         super(new FlowLayout(FlowLayout.LEFT, 8, 8));
-        setBorder(new EmptyBorder(4, 4, 4, 4));
+        UiStyle.applyPanelStyle(this, "Monitoring Control");
 
         startButton = new JButton("Start");
         stopButton = new JButton("Stop");
@@ -44,6 +43,7 @@ public class ControlPanel extends JPanel {
 
     public void setMonitorState(MonitorState state) {
         stateLabel.setText("State: " + state.getLabel());
+        stateLabel.setForeground(UiStyle.MUTED_TEXT);
         startButton.setEnabled(state != MonitorState.RUNNING);
         stopButton.setEnabled(state == MonitorState.RUNNING);
     }

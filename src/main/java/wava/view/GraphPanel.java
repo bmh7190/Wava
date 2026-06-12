@@ -42,8 +42,7 @@ public class GraphPanel extends JPanel {
         timestamps = new ArrayList<>();
         markers = new ArrayList<>();
         setPreferredSize(new Dimension(480, PREFERRED_HEIGHT));
-        setBorder(new EmptyBorder(8, 8, 8, 8));
-        setBackground(Color.WHITE);
+        UiStyle.applyPanelStyle(this, title);
     }
 
     public void setValues(List<Double> nextValues) {
@@ -95,7 +94,7 @@ public class GraphPanel extends JPanel {
     }
 
     private void drawTitle(Graphics2D g2) {
-        g2.setColor(new Color(35, 35, 35));
+        g2.setColor(UiStyle.TEXT);
         g2.drawString(title, LEFT_PADDING, 18);
     }
 
@@ -105,11 +104,11 @@ public class GraphPanel extends JPanel {
         int right = getWidth() - RIGHT_PADDING;
         int bottom = getHeight() - BOTTOM_PADDING;
 
-        g2.setColor(new Color(235, 235, 235));
+        g2.setColor(new Color(248, 250, 252));
         g2.fillRect(left, top, right - left, bottom - top);
-        g2.setColor(new Color(170, 170, 170));
+        g2.setColor(UiStyle.BORDER);
         g2.drawRect(left, top, right - left, bottom - top);
-        g2.setColor(new Color(90, 90, 90));
+        g2.setColor(UiStyle.MUTED_TEXT);
         g2.drawString(unit, 14, top + 12);
         drawGridLines(g2, scale, left, top, right, bottom);
     }
@@ -118,9 +117,9 @@ public class GraphPanel extends JPanel {
         for (int tickIndex = 0; tickIndex < TICK_COUNT; tickIndex++) {
             int y = top + (bottom - top) * tickIndex / (TICK_COUNT - 1);
             double value = scale.getTickValue(TICK_COUNT - 1 - tickIndex, TICK_COUNT);
-            g2.setColor(new Color(215, 215, 215));
+            g2.setColor(new Color(226, 232, 240));
             g2.drawLine(left, y, right, y);
-            g2.setColor(new Color(80, 80, 80));
+            g2.setColor(UiStyle.MUTED_TEXT);
             g2.drawString(formatValue(value), 8, y + 4);
         }
     }
@@ -140,7 +139,7 @@ public class GraphPanel extends JPanel {
         int right = getWidth() - RIGHT_PADDING;
         int bottom = getHeight() - BOTTOM_PADDING;
 
-        g2.setColor(new Color(37, 99, 235));
+        g2.setColor(UiStyle.PRIMARY);
         g2.setStroke(new BasicStroke(2f));
         if (values.size() == 1) {
             int x = calculateX(0, left, right);
@@ -171,7 +170,7 @@ public class GraphPanel extends JPanel {
         g2.setStroke(new BasicStroke(1f));
         for (GraphMarker marker : markers) {
             int x = timeline.calculateX(marker.getTimestampMillis(), left, right);
-            g2.setColor(new Color(220, 38, 38, 150));
+            g2.setColor(new Color(UiStyle.DANGER.getRed(), UiStyle.DANGER.getGreen(), UiStyle.DANGER.getBlue(), 150));
             g2.drawLine(x, top, x, bottom);
             drawMarkerLabel(g2, marker, x, top);
         }
@@ -181,7 +180,7 @@ public class GraphPanel extends JPanel {
         String label = marker.getLabel();
         FontMetrics metrics = g2.getFontMetrics();
         int labelX = Math.min(x + 3, getWidth() - RIGHT_PADDING - metrics.stringWidth(label));
-        g2.setColor(new Color(120, 30, 30));
+        g2.setColor(UiStyle.DANGER);
         g2.drawString(label, Math.max(LEFT_PADDING, labelX), top + 12);
     }
 
@@ -190,7 +189,7 @@ public class GraphPanel extends JPanel {
         String label = "Latest: " + formatValue(latestValue) + " " + unit;
         FontMetrics metrics = g2.getFontMetrics();
         int x = getWidth() - RIGHT_PADDING - metrics.stringWidth(label);
-        g2.setColor(new Color(35, 35, 35));
+        g2.setColor(UiStyle.TEXT);
         g2.drawString(label, x, 18);
     }
 

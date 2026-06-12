@@ -23,11 +23,12 @@ public class LogPanel extends JPanel {
 
     public LogPanel() {
         super(new BorderLayout(0, 6));
-        setBorder(new EmptyBorder(8, 8, 8, 8));
+        UiStyle.applyPanelStyle(this, "JIT Log");
 
         logArea = new JTextArea();
         logArea.setEditable(false);
         logArea.setRows(8);
+        logArea.setLineWrap(false);
 
         logPathField = new JTextField("logs/jit.log");
         filterField = new JTextField();
@@ -78,6 +79,7 @@ public class LogPanel extends JPanel {
 
     private JPanel createSettingsPanel() {
         JPanel panel = new JPanel(new GridLayout(3, 1, 0, 4));
+        panel.setOpaque(false);
         panel.add(createPathPanel());
         panel.add(createFilterPanel());
         panel.add(applyButton);
@@ -86,6 +88,7 @@ public class LogPanel extends JPanel {
 
     private JPanel createPathPanel() {
         JPanel panel = new JPanel(new BorderLayout(4, 0));
+        panel.setOpaque(false);
         panel.add(new JLabel("JIT Log"), BorderLayout.WEST);
         panel.add(logPathField, BorderLayout.CENTER);
         panel.add(browseButton, BorderLayout.EAST);
@@ -94,6 +97,7 @@ public class LogPanel extends JPanel {
 
     private JPanel createFilterPanel() {
         JPanel panel = new JPanel(new BorderLayout(4, 0));
+        panel.setOpaque(false);
         panel.add(new JLabel("Filter"), BorderLayout.WEST);
         panel.add(filterField, BorderLayout.CENTER);
         return panel;
