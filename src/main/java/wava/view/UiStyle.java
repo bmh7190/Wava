@@ -4,15 +4,21 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Rectangle;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
+import javax.swing.plaf.basic.BasicScrollBarUI;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -30,6 +36,8 @@ public final class UiStyle {
     public static final Color PRIMARY_SOFT = new Color(219, 234, 254);
     public static final Color DANGER = new Color(220, 38, 38);
     public static final Color FIELD_BACKGROUND = new Color(255, 255, 255);
+    public static final Color SCROLLBAR_THUMB = new Color(148, 163, 184);
+    public static final Color SCROLLBAR_TRACK = new Color(241, 245, 249);
     public static final Font APP_FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
     public static final Font APP_FONT_BOLD = APP_FONT.deriveFont(Font.BOLD);
 
@@ -79,9 +87,9 @@ public final class UiStyle {
         button.setFont(APP_FONT_BOLD);
         button.setForeground(TEXT);
         button.setBackground(PRIMARY_SOFT);
-        button.setBorder(new CompoundBorder(
-                BorderFactory.createLineBorder(new Color(148, 163, 184)),
-                new EmptyBorder(5, 12, 5, 12)));
+        button.setMargin(new Insets(4, 12, 4, 12));
+        button.setBorder(new EmptyBorder(5, 12, 5, 12));
+        button.setBorderPainted(false);
         button.setFocusPainted(false);
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         button.setPreferredSize(new Dimension(button.getPreferredSize().width, 30));
@@ -91,9 +99,6 @@ public final class UiStyle {
         applyButtonStyle(button);
         button.setForeground(Color.WHITE);
         button.setBackground(PRIMARY);
-        button.setBorder(new CompoundBorder(
-                BorderFactory.createLineBorder(PRIMARY_HOVER),
-                new EmptyBorder(5, 12, 5, 12)));
     }
 
     public static void applyTextFieldStyle(JTextField field) {
@@ -125,5 +130,60 @@ public final class UiStyle {
     public static void applyScrollPaneStyle(JScrollPane scrollPane) {
         scrollPane.setBorder(BorderFactory.createLineBorder(BORDER));
         scrollPane.getViewport().setBackground(SURFACE);
+        applyScrollBarStyle(scrollPane.getVerticalScrollBar());
+        applyScrollBarStyle(scrollPane.getHorizontalScrollBar());
+    }
+
+    public static void applyScrollBarStyle(JScrollBar scrollBar) {
+        scrollBar.setUI(new WavaScrollBarUI());
+        scrollBar.setUnitIncrement(16);
+        if (scrollBar.getOrientation() == JScrollBar.VERTICAL) {
+            scrollBar.setPreferredSize(new Dimension(10, 0));
+        } else {
+            scrollBar.setPreferredSize(new Dimension(0, 10));
+        }
+    }
+
+    private static class WavaScrollBarUI extends BasicScrollBarUI {
+        @Override
+        protected JButton createDecreaseButton(int orientation) {
+            return createZeroButton();
+        }
+
+        @Override
+        protected JButton createIncreaseButton(int orientation) {
+            return createZeroButton();
+        }
+
+        @Override
+        protected void paintTrack(Graphics graphics, JComponent component, Rectangle trackBounds) {
+            graphics.setColor(SCROLLBAR_TRACK);
+            graphics.fillRect(trackBounds.x, trackBounds.y, trackBounds.width, trackBounds.height);
+        }
+
+        @Override
+        protected void paintThumb(Graphics graphics, JComponent component, Rectangle thumbBounds) {
+            if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) {
+                return;
+            }
+            Graphics2D graphics2D = (Graphics2D) graphics.create();
+            graphics2D.setColor(SCROLLBAR_THUMB);
+            graphics2D.fillRoundRect(
+                    thumbBounds.x + 2,
+                    thumbBounds.y + 2,
+                    Math.max(4, thumbBounds.width - 4),
+                    Math.max(4, thumbBounds.height - 4),
+                    8,
+                    8);
+            graphics2D.dispose();
+        }
+
+        private JButton createZeroButton() {
+            JButton button = new JButton();
+            button.setPreferredSize(new Dimension(0, 0));
+            button.setMinimumSize(new Dimension(0, 0));
+            button.setMaximumSize(new Dimension(0, 0));
+            return button;
+        }
     }
 }

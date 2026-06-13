@@ -118,7 +118,7 @@ public class SummaryPanel extends JPanel {
                 new Field("File", jfrFileLabel)));
 
         JScrollPane scrollPane = new JScrollPane(contentPanel);
-        scrollPane.setBorder(null);
+        UiStyle.applyScrollPaneStyle(scrollPane);
         scrollPane.getViewport().setOpaque(false);
         scrollPane.setOpaque(false);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
