@@ -1,5 +1,7 @@
 package wava.model.jfr;
 
+import java.nio.file.Path;
+
 public class JfrRecordingStatusTest {
     public static void main(String[] args) {
         createIdleStatus();
@@ -24,11 +26,14 @@ public class JfrRecordingStatusTest {
     }
 
     private static void createStoppedStatus() {
-        JfrRecordingStatus status = JfrRecordingStatus.stopped(7L);
+        Path outputPath = Path.of("exports", "jfr", "sample.jfr");
+        JfrRecordingStatus status = JfrRecordingStatus.stopped(7L, outputPath);
 
         assertTrue(!status.isRecording(), "recording");
         assertEquals(7L, status.getRecordingId(), "id");
         assertEquals("Stopped", status.getStateLabel(), "state");
+        assertTrue(status.hasOutputPath(), "output path");
+        assertEquals(outputPath.toString(), status.getOutputPath().toString(), "output path");
     }
 
     private static void createFailedStatus() {

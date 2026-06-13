@@ -1,6 +1,7 @@
 package wava.service.jfr;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import wava.model.jfr.JfrRecordingStatus;
 import wava.model.process.JavaProcessInfo;
 
@@ -37,8 +38,8 @@ public class TargetJfrRecorder {
         }
 
         try {
-            recordingClient.stopRecording(targetProcess.getPid(), currentStatus.getRecordingId());
-            return JfrRecordingStatus.stopped(currentStatus.getRecordingId());
+            Path outputPath = recordingClient.stopRecording(targetProcess.getPid(), currentStatus.getRecordingId());
+            return JfrRecordingStatus.stopped(currentStatus.getRecordingId(), outputPath);
         } catch (IOException exception) {
             return JfrRecordingStatus.failed(exception.getMessage());
         }

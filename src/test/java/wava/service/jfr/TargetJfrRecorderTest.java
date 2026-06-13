@@ -1,6 +1,7 @@
 package wava.service.jfr;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import wava.model.jfr.JfrRecordingStatus;
 import wava.model.process.JavaProcessInfo;
 
@@ -34,6 +35,8 @@ public class TargetJfrRecorderTest {
         assertEquals("Stopped", status.getStateLabel(), "state");
         assertEquals(1234L, client.stoppedPid, "stopped pid");
         assertEquals(12L, client.stoppedRecordingId, "stopped id");
+        assertTrue(status.hasOutputPath(), "output path");
+        assertEquals(client.outputPath.toString(), status.getOutputPath().toString(), "output path");
     }
 
     private static void keepIdleStatusWhenStoppingInactiveRecording() {
@@ -70,6 +73,7 @@ public class TargetJfrRecorderTest {
 
     private static class FakeRecordingClient implements JfrRecordingClient {
         private final long recordingId;
+        private final Path outputPath;
         private long startedPid;
         private long stoppedPid;
         private long stoppedRecordingId;
@@ -78,6 +82,7 @@ public class TargetJfrRecorderTest {
 
         private FakeRecordingClient(long recordingId) {
             this.recordingId = recordingId;
+            outputPath = Path.of("exports", "jfr", "sample.jfr");
         }
 
         @Override
@@ -90,12 +95,13 @@ public class TargetJfrRecorderTest {
         }
 
         @Override
-        public void stopRecording(long pid, long recordingId) throws IOException {
+        public Path stopRecording(long pid, long recordingId) throws IOException {
             if (failStop) {
                 throw new IOException("stop failed");
             }
             stoppedPid = pid;
             stoppedRecordingId = recordingId;
+            return outputPath;
         }
     }
 
