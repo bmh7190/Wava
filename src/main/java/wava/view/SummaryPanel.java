@@ -74,6 +74,7 @@ public class SummaryPanel extends JPanel {
                 + "Samples: " + samples.size() + System.lineSeparator()
                 + "CPU: " + formatValue(latestSample.getCpuUsagePercent()) + " %" + System.lineSeparator()
                 + "Heap: " + formatHeapValue(latestSample) + System.lineSeparator()
+                + "GC: " + formatGcValue(latestSample) + System.lineSeparator()
                 + System.lineSeparator()
                 + formatWarmupSummary(summary) + System.lineSeparator()
                 + System.lineSeparator()
@@ -164,6 +165,14 @@ public class SummaryPanel extends JPanel {
             return "Unavailable";
         }
         return formatValue(sample.getHeapUsedMb()) + " MB";
+    }
+
+    private String formatGcValue(MetricSample sample) {
+        if (!sample.isGcAvailable()) {
+            return "Unavailable";
+        }
+        return "count +" + sample.getGcCountDelta()
+                + ", time +" + sample.getGcTimeDeltaMillis() + " ms";
     }
 
     private String formatSignedValue(double value) {

@@ -182,7 +182,7 @@ public class MainController {
             WarmupSummary summary = warmupAnalyzer.analyze(samples);
             WarmupStabilityPoint stabilityPoint = warmupStabilityAnalyzer.analyze(samples, jitEvents, jitEventFilter);
             JitEventSummary jitSummary = jitSummaryAnalyzer.analyze(jitEvents, jitEventFilter);
-            List<GraphMarker> markers = createGraphMarkers(stabilityPoint);
+            List<GraphMarker> markers = createGraphMarkers(samples, stabilityPoint);
             frame.getCpuGraphPanel().setSamples(samples, extractCpuValues(samples));
             frame.getCpuGraphPanel().setMarkers(markers);
             frame.getMemoryGraphPanel().setSamples(samples, extractMemoryValues(samples));
@@ -246,11 +246,16 @@ public class MainController {
         return values;
     }
 
-    private List<GraphMarker> createGraphMarkers(WarmupStabilityPoint stabilityPoint) {
+    private List<GraphMarker> createGraphMarkers(List<MetricSample> samples, WarmupStabilityPoint stabilityPoint) {
         List<GraphMarker> markers = new ArrayList<>();
         for (JitEvent event : jitEvents) {
             if (jitEventFilter.matches(event)) {
                 markers.add(new GraphMarker(event.getTimestampMillis(), "JIT"));
+            }
+        }
+        for (MetricSample sample : samples) {
+            if (sample.hasGcActivity()) {
+                markers.add(new GraphMarker(sample.getTimestampMillis(), "GC"));
             }
         }
         if (stabilityPoint.isAvailable()) {

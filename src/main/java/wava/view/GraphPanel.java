@@ -27,6 +27,7 @@ public class GraphPanel extends JPanel {
     private static final int POINT_RADIUS = 4;
     private static final GraphScale CPU_SCALE = GraphScale.fixed(0.0, 100.0);
     private static final Color STABILITY_COLOR = new Color(22, 163, 74);
+    private static final Color GC_COLOR = new Color(234, 88, 12);
 
     private final String unit;
     private final GraphScaleMode scaleMode;
@@ -186,6 +187,9 @@ public class GraphPanel extends JPanel {
     private Color getMarkerColor(GraphMarker marker) {
         if ("Stable".equals(marker.getLabel())) {
             return STABILITY_COLOR;
+        }
+        if ("GC".equals(marker.getLabel())) {
+            return GC_COLOR;
         }
         return UiStyle.DANGER;
     }

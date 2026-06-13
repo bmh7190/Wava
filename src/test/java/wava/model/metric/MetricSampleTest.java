@@ -4,6 +4,7 @@ public class MetricSampleTest {
     public static void main(String[] args) {
         storeMetricValues();
         storeHeapAvailability();
+        storeGcDeltaValues();
     }
 
     private static void storeMetricValues() {
@@ -13,12 +14,22 @@ public class MetricSampleTest {
         assertEquals(42.5, sample.getCpuUsagePercent(), "cpu");
         assertEquals(128.25, sample.getHeapUsedMb(), "heap");
         assertTrue(sample.isHeapAvailable(), "default heap availability");
+        assertTrue(!sample.isGcAvailable(), "default gc availability");
     }
 
     private static void storeHeapAvailability() {
         MetricSample sample = new MetricSample(1000L, 42.5, 0.0, false);
 
         assertTrue(!sample.isHeapAvailable(), "heap availability");
+    }
+
+    private static void storeGcDeltaValues() {
+        MetricSample sample = new MetricSample(1000L, 42.5, 128.25, true, true, 2L, 30L);
+
+        assertTrue(sample.isGcAvailable(), "gc availability");
+        assertEquals(2L, sample.getGcCountDelta(), "gc count");
+        assertEquals(30L, sample.getGcTimeDeltaMillis(), "gc time");
+        assertTrue(sample.hasGcActivity(), "gc activity");
     }
 
     private static void assertEquals(long expected, long actual, String label) {
