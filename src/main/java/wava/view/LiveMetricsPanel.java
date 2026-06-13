@@ -126,22 +126,44 @@ public class LiveMetricsPanel extends JPanel {
     private void updateWarmup(WarmupSummary summary, WarmupStabilityPoint stabilityPoint) {
         if (!summary.isAvailable()) {
             warmupCpuLabel.setText("Collecting (" + summary.getSampleCount() + ")");
+            warmupCpuLabel.setToolTipText(null);
             warmupHeapLabel.setText("Collecting");
+            warmupHeapLabel.setToolTipText(null);
         } else {
-            warmupCpuLabel.setText(formatValue(summary.getEarlyAverageCpu())
-                    + " -> " + formatValue(summary.getLateAverageCpu())
-                    + " (" + formatSignedValue(summary.getCpuChange()) + " %)");
-            warmupHeapLabel.setText(formatValue(summary.getEarlyAverageHeap())
-                    + " -> " + formatValue(summary.getLateAverageHeap())
-                    + " (" + formatSignedValue(summary.getHeapChange()) + " MB)");
+            String cpuText = compactChangeText(
+                    summary.getEarlyAverageCpu(),
+                    summary.getLateAverageCpu(),
+                    summary.getCpuChange(),
+                    "%");
+            String heapText = compactChangeText(
+                    summary.getEarlyAverageHeap(),
+                    summary.getLateAverageHeap(),
+                    summary.getHeapChange(),
+                    "MB");
+            warmupCpuLabel.setText(cpuText);
+            warmupCpuLabel.setToolTipText("CPU " + expandedChangeText(
+                    summary.getEarlyAverageCpu(),
+                    summary.getLateAverageCpu(),
+                    summary.getCpuChange(),
+                    "%"));
+            warmupHeapLabel.setText(heapText);
+            warmupHeapLabel.setToolTipText("Heap " + expandedChangeText(
+                    summary.getEarlyAverageHeap(),
+                    summary.getLateAverageHeap(),
+                    summary.getHeapChange(),
+                    "MB"));
         }
 
         if (!stabilityPoint.isAvailable()) {
             stabilityLabel.setText("Not available");
+            stabilityLabel.setToolTipText(null);
             return;
         }
-        stabilityLabel.setText("Sample " + stabilityPoint.getSampleIndex()
-                + ", range " + formatValue(stabilityPoint.getCpuRangePercent()) + " %");
+        stabilityLabel.setText("S" + stabilityPoint.getSampleIndex()
+                + ", range " + formatValue(stabilityPoint.getCpuRangePercent()) + "%");
+        stabilityLabel.setToolTipText("Stable point sample " + stabilityPoint.getSampleIndex()
+                + ", CPU range " + formatValue(stabilityPoint.getCpuRangePercent())
+                + "%, JIT events " + stabilityPoint.getJitEventCount());
     }
 
     private void clearValues() {
@@ -151,6 +173,7 @@ public class LiveMetricsPanel extends JPanel {
         warmupCpuLabel.setText("-");
         warmupHeapLabel.setText("-");
         stabilityLabel.setText("-");
+        stabilityLabel.setToolTipText(null);
     }
 
     private JLabel createSectionTitleLabel(String text) {
@@ -214,6 +237,17 @@ public class LiveMetricsPanel extends JPanel {
 
     private String formatSignedValue(double value) {
         return String.format("%+.2f", value);
+    }
+
+    private String compactChangeText(double earlyValue, double lateValue, double changeValue, String unit) {
+        return formatValue(earlyValue) + ">" + formatValue(lateValue)
+                + " (" + formatSignedValue(changeValue) + unit + ")";
+    }
+
+    private String expandedChangeText(double earlyValue, double lateValue, double changeValue, String unit) {
+        return "early " + formatValue(earlyValue)
+                + unit + ", late " + formatValue(lateValue)
+                + unit + ", change " + formatSignedValue(changeValue) + unit;
     }
 
     private static class Field {

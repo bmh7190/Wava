@@ -17,7 +17,7 @@ public class WavaFrame extends JFrame {
     private static final int DEFAULT_HEIGHT = 720;
     private static final int LEFT_PANEL_WIDTH = 260;
     private static final int BOTTOM_PANEL_HEIGHT = 180;
-    private static final int LIVE_METRICS_PANEL_HEIGHT = 190;
+    private static final int LIVE_METRICS_PANEL_HEIGHT = 330;
 
     private final ProcessPanel processPanel;
     private final LiveMetricsPanel liveMetricsPanel;
