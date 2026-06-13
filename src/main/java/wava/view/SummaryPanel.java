@@ -35,10 +35,6 @@ public class SummaryPanel extends JPanel {
 
     private final JLabel stateLabel;
     private final JLabel noticeLabel;
-    private final JLabel targetPidLabel;
-    private final JLabel targetNameLabel;
-    private final JLabel targetStatusLabel;
-    private final JLabel sampleCountLabel;
     private final JLabel cpuLabel;
     private final JLabel heapLabel;
     private final JLabel gcLabel;
@@ -59,10 +55,6 @@ public class SummaryPanel extends JPanel {
 
         stateLabel = createValueLabel();
         noticeLabel = createNoticeLabel();
-        targetPidLabel = createValueLabel();
-        targetNameLabel = createValueLabel();
-        targetStatusLabel = createValueLabel();
-        sampleCountLabel = createValueLabel();
         cpuLabel = createValueLabel();
         heapLabel = createValueLabel();
         gcLabel = createValueLabel();
@@ -94,15 +86,10 @@ public class SummaryPanel extends JPanel {
     public void showSelectedProcess(JavaProcessInfo process) {
         if (process == null) {
             resetSummaryValues();
-            targetNameLabel.setText("No process selected");
             showMessage("No process selected.");
             return;
         }
-        targetPidLabel.setText(String.valueOf(process.getPid()));
-        setCompactText(targetNameLabel, process.getDisplayName(), 48);
-        targetStatusLabel.setText("Selected");
-        sampleCountLabel.setText("-");
-        showMessage("Process selected.");
+        showMessage("Selected: " + process.getDisplayName());
     }
 
     public void showMonitoringSummary(
@@ -123,12 +110,11 @@ public class SummaryPanel extends JPanel {
         }
 
         MetricSample latestSample = samples.get(samples.size() - 1);
-        updateTarget(process, targetProcessStatus, samples.size());
+        updateHeader(process, targetProcessStatus, samples.size());
         updateLatestMetrics(latestSample);
         updateWarmup(summary, stabilityPoint);
         updateJit(jitLogStatus, jitFilterText, jitSummary);
         updateJfr(jfrStatus, jfrRecordingStatus, jfrEventSummary);
-        showMessage("Monitoring data updated.");
     }
 
     private JPanel createHeaderPanel() {
@@ -145,12 +131,6 @@ public class SummaryPanel extends JPanel {
         JPanel contentPanel = new JPanel();
         contentPanel.setOpaque(false);
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-        contentPanel.add(createSectionPanel("Target",
-                new Field("PID", targetPidLabel),
-                new Field("Name", targetNameLabel),
-                new Field("Status", targetStatusLabel),
-                new Field("Samples", sampleCountLabel)));
-        contentPanel.add(Box.createVerticalStrut(SECTION_GAP));
         contentPanel.add(createSectionPanel("Latest Metrics",
                 new Field("CPU", cpuLabel),
                 new Field("Heap", heapLabel),
@@ -244,11 +224,6 @@ public class SummaryPanel extends JPanel {
     }
 
     private void resetSummaryValues() {
-        targetPidLabel.setText("-");
-        targetNameLabel.setText("-");
-        targetNameLabel.setToolTipText(null);
-        targetStatusLabel.setText("-");
-        sampleCountLabel.setText("-");
         cpuLabel.setText("-");
         heapLabel.setText("-");
         gcLabel.setText("-");
@@ -267,11 +242,11 @@ public class SummaryPanel extends JPanel {
         jfrFileLabel.setToolTipText(null);
     }
 
-    private void updateTarget(JavaProcessInfo process, TargetProcessStatus targetProcessStatus, int sampleCount) {
-        targetPidLabel.setText(String.valueOf(process.getPid()));
-        setCompactText(targetNameLabel, process.getDisplayName(), 48);
-        targetStatusLabel.setText(targetProcessStatus.getLabel());
-        sampleCountLabel.setText(String.valueOf(sampleCount));
+    private void updateHeader(JavaProcessInfo process, TargetProcessStatus targetProcessStatus, int sampleCount) {
+        String targetText = process.getDisplayName()
+                + " | " + targetProcessStatus.getLabel()
+                + " | " + sampleCount + " samples";
+        setCompactText(noticeLabel, targetText, 80);
     }
 
     private void updateLatestMetrics(MetricSample latestSample) {
