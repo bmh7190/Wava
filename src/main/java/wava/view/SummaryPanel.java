@@ -1,40 +1,85 @@
 package wava.view;
 
 import java.awt.BorderLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.nio.file.Path;
 import java.util.List;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
 import wava.model.jfr.JfrAvailabilityStatus;
 import wava.model.jfr.JfrEventSummary;
 import wava.model.jfr.JfrRecordingStatus;
-import wava.model.process.JavaProcessInfo;
 import wava.model.jit.JitEventSummary;
 import wava.model.jit.JitLogStatus;
 import wava.model.jit.JitMethodCount;
 import wava.model.metric.MetricSample;
 import wava.model.monitor.MonitorState;
+import wava.model.process.JavaProcessInfo;
 import wava.model.process.TargetProcessStatus;
 import wava.model.warmup.WarmupStabilityPoint;
 import wava.model.warmup.WarmupSummary;
 
 public class SummaryPanel extends JPanel {
+    private static final int SECTION_GAP = 8;
+    private static final int MAX_TOP_METHODS = 3;
+
     private final JLabel stateLabel;
-    private final JTextArea summaryArea;
+    private final JLabel noticeLabel;
+    private final JLabel targetPidLabel;
+    private final JLabel targetNameLabel;
+    private final JLabel targetStatusLabel;
+    private final JLabel sampleCountLabel;
+    private final JLabel cpuLabel;
+    private final JLabel heapLabel;
+    private final JLabel gcLabel;
+    private final JLabel warmupCpuLabel;
+    private final JLabel warmupHeapLabel;
+    private final JLabel stabilityLabel;
+    private final JLabel jitLogLabel;
+    private final JLabel jitEventsLabel;
+    private final JLabel jitTopMethodsLabel;
+    private final JLabel jfrAvailabilityLabel;
+    private final JLabel jfrRecordingLabel;
+    private final JLabel jfrEventsLabel;
+    private final JLabel jfrFileLabel;
 
     public SummaryPanel() {
         super(new BorderLayout(0, 6));
         UiStyle.applyPanelStyle(this, "Summary");
 
-        stateLabel = new JLabel();
-        stateLabel.setForeground(UiStyle.MUTED_TEXT);
-        summaryArea = new JTextArea();
-        summaryArea.setEditable(false);
-        summaryArea.setRows(8);
+        stateLabel = createValueLabel();
+        noticeLabel = createNoticeLabel();
+        targetPidLabel = createValueLabel();
+        targetNameLabel = createValueLabel();
+        targetStatusLabel = createValueLabel();
+        sampleCountLabel = createValueLabel();
+        cpuLabel = createValueLabel();
+        heapLabel = createValueLabel();
+        gcLabel = createValueLabel();
+        warmupCpuLabel = createValueLabel();
+        warmupHeapLabel = createValueLabel();
+        stabilityLabel = createValueLabel();
+        jitLogLabel = createValueLabel();
+        jitEventsLabel = createValueLabel();
+        jitTopMethodsLabel = createValueLabel();
+        jfrAvailabilityLabel = createValueLabel();
+        jfrRecordingLabel = createValueLabel();
+        jfrEventsLabel = createValueLabel();
+        jfrFileLabel = createValueLabel();
 
-        add(stateLabel, BorderLayout.NORTH);
-        add(new JScrollPane(summaryArea), BorderLayout.CENTER);
+        add(createHeaderPanel(), BorderLayout.NORTH);
+        add(createScrollPane(), BorderLayout.CENTER);
+        resetSummaryValues();
         showMessage("No monitoring data.");
     }
 
@@ -43,17 +88,21 @@ public class SummaryPanel extends JPanel {
     }
 
     public void showMessage(String message) {
-        summaryArea.setText(message);
+        noticeLabel.setText(message);
     }
 
     public void showSelectedProcess(JavaProcessInfo process) {
         if (process == null) {
-            summaryArea.setText("No process selected.");
+            resetSummaryValues();
+            targetNameLabel.setText("No process selected");
+            showMessage("No process selected.");
             return;
         }
-        summaryArea.setText("Selected Process" + System.lineSeparator()
-                + "PID: " + process.getPid() + System.lineSeparator()
-                + "Name: " + process.getDisplayName());
+        targetPidLabel.setText(String.valueOf(process.getPid()));
+        setCompactText(targetNameLabel, process.getDisplayName(), 48);
+        targetStatusLabel.setText("Selected");
+        sampleCountLabel.setText("-");
+        showMessage("Process selected.");
     }
 
     public void showMonitoringSummary(
@@ -72,119 +121,261 @@ public class SummaryPanel extends JPanel {
             showSelectedProcess(process);
             return;
         }
+
         MetricSample latestSample = samples.get(samples.size() - 1);
-        summaryArea.setText("Monitoring Target" + System.lineSeparator()
-                + "PID: " + process.getPid() + System.lineSeparator()
-                + "Name: " + process.getDisplayName() + System.lineSeparator()
-                + "Target status: " + targetProcessStatus.getLabel() + System.lineSeparator()
-                + "Samples: " + samples.size() + System.lineSeparator()
-                + "CPU: " + formatValue(latestSample.getCpuUsagePercent()) + " %" + System.lineSeparator()
-                + "Heap: " + formatHeapValue(latestSample) + System.lineSeparator()
-                + "GC: " + formatGcValue(latestSample) + System.lineSeparator()
-                + System.lineSeparator()
-                + formatWarmupSummary(summary) + System.lineSeparator()
-                + System.lineSeparator()
-                + formatStabilityPoint(stabilityPoint) + System.lineSeparator()
-                + System.lineSeparator()
-                + formatJitLogStatus(jitLogStatus, jitFilterText) + System.lineSeparator()
-                + System.lineSeparator()
-                + formatJfrStatus(jfrStatus, jfrRecordingStatus) + System.lineSeparator()
-                + System.lineSeparator()
-                + formatJfrEventSummary(jfrEventSummary) + System.lineSeparator()
-                + System.lineSeparator()
-                + formatJitSummary(jitSummary));
+        updateTarget(process, targetProcessStatus, samples.size());
+        updateLatestMetrics(latestSample);
+        updateWarmup(summary, stabilityPoint);
+        updateJit(jitLogStatus, jitFilterText, jitSummary);
+        updateJfr(jfrStatus, jfrRecordingStatus, jfrEventSummary);
+        showMessage("Monitoring data updated.");
     }
 
-    private String formatWarmupSummary(WarmupSummary summary) {
+    private JPanel createHeaderPanel() {
+        JPanel panel = new JPanel(new BorderLayout(6, 0));
+        panel.setOpaque(false);
+        stateLabel.setForeground(UiStyle.MUTED_TEXT);
+        noticeLabel.setForeground(UiStyle.MUTED_TEXT);
+        panel.add(stateLabel, BorderLayout.WEST);
+        panel.add(noticeLabel, BorderLayout.EAST);
+        return panel;
+    }
+
+    private JScrollPane createScrollPane() {
+        JPanel contentPanel = new JPanel();
+        contentPanel.setOpaque(false);
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.add(createSectionPanel("Target",
+                new Field("PID", targetPidLabel),
+                new Field("Name", targetNameLabel),
+                new Field("Status", targetStatusLabel),
+                new Field("Samples", sampleCountLabel)));
+        contentPanel.add(Box.createVerticalStrut(SECTION_GAP));
+        contentPanel.add(createSectionPanel("Latest Metrics",
+                new Field("CPU", cpuLabel),
+                new Field("Heap", heapLabel),
+                new Field("GC", gcLabel)));
+        contentPanel.add(Box.createVerticalStrut(SECTION_GAP));
+        contentPanel.add(createSectionPanel("Warm-up",
+                new Field("CPU", warmupCpuLabel),
+                new Field("Heap", warmupHeapLabel),
+                new Field("Stable", stabilityLabel)));
+        contentPanel.add(Box.createVerticalStrut(SECTION_GAP));
+        contentPanel.add(createSectionPanel("JIT",
+                new Field("Log", jitLogLabel),
+                new Field("Events", jitEventsLabel),
+                new Field("Top", jitTopMethodsLabel)));
+        contentPanel.add(Box.createVerticalStrut(SECTION_GAP));
+        contentPanel.add(createSectionPanel("JFR",
+                new Field("Runtime", jfrAvailabilityLabel),
+                new Field("Recording", jfrRecordingLabel),
+                new Field("Events", jfrEventsLabel),
+                new Field("File", jfrFileLabel)));
+
+        JScrollPane scrollPane = new JScrollPane(contentPanel);
+        scrollPane.setBorder(null);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.setOpaque(false);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        return scrollPane;
+    }
+
+    private JPanel createSectionPanel(String title, Field... fields) {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(UiStyle.PANEL_BACKGROUND);
+        panel.setBorder(new CompoundBorder(
+                BorderFactory.createLineBorder(UiStyle.BORDER),
+                new EmptyBorder(6, 8, 6, 8)));
+
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.gridwidth = 2;
+        constraints.weightx = 1.0;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.insets = new Insets(0, 0, 5, 0);
+
+        JLabel titleLabel = createSectionTitleLabel(title);
+        panel.add(titleLabel, constraints);
+
+        constraints.gridwidth = 1;
+        constraints.insets = new Insets(1, 0, 1, 8);
+        for (int index = 0; index < fields.length; index++) {
+            Field field = fields[index];
+            constraints.gridy = index + 1;
+            constraints.gridx = 0;
+            constraints.weightx = 0.0;
+            constraints.fill = GridBagConstraints.NONE;
+            JLabel nameLabel = createNameLabel(field.name);
+            panel.add(nameLabel, constraints);
+
+            constraints.gridx = 1;
+            constraints.weightx = 1.0;
+            constraints.fill = GridBagConstraints.HORIZONTAL;
+            panel.add(field.valueLabel, constraints);
+        }
+        return panel;
+    }
+
+    private JLabel createSectionTitleLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setForeground(UiStyle.TEXT);
+        label.setFont(label.getFont().deriveFont(Font.BOLD));
+        return label;
+    }
+
+    private JLabel createNameLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setForeground(UiStyle.MUTED_TEXT);
+        return label;
+    }
+
+    private JLabel createValueLabel() {
+        JLabel label = new JLabel("-");
+        label.setForeground(UiStyle.TEXT);
+        return label;
+    }
+
+    private JLabel createNoticeLabel() {
+        JLabel label = new JLabel();
+        label.setHorizontalAlignment(JLabel.RIGHT);
+        return label;
+    }
+
+    private void resetSummaryValues() {
+        targetPidLabel.setText("-");
+        targetNameLabel.setText("-");
+        targetNameLabel.setToolTipText(null);
+        targetStatusLabel.setText("-");
+        sampleCountLabel.setText("-");
+        cpuLabel.setText("-");
+        heapLabel.setText("-");
+        gcLabel.setText("-");
+        warmupCpuLabel.setText("-");
+        warmupHeapLabel.setText("-");
+        stabilityLabel.setText("-");
+        jitLogLabel.setText("-");
+        jitLogLabel.setToolTipText(null);
+        jitEventsLabel.setText("-");
+        jitTopMethodsLabel.setText("-");
+        jitTopMethodsLabel.setToolTipText(null);
+        jfrAvailabilityLabel.setText("-");
+        jfrRecordingLabel.setText("-");
+        jfrEventsLabel.setText("-");
+        jfrFileLabel.setText("-");
+        jfrFileLabel.setToolTipText(null);
+    }
+
+    private void updateTarget(JavaProcessInfo process, TargetProcessStatus targetProcessStatus, int sampleCount) {
+        targetPidLabel.setText(String.valueOf(process.getPid()));
+        setCompactText(targetNameLabel, process.getDisplayName(), 48);
+        targetStatusLabel.setText(targetProcessStatus.getLabel());
+        sampleCountLabel.setText(String.valueOf(sampleCount));
+    }
+
+    private void updateLatestMetrics(MetricSample latestSample) {
+        cpuLabel.setText(formatValue(latestSample.getCpuUsagePercent()) + " %");
+        heapLabel.setText(formatHeapValue(latestSample));
+        gcLabel.setText(formatGcValue(latestSample));
+    }
+
+    private void updateWarmup(WarmupSummary summary, WarmupStabilityPoint stabilityPoint) {
         if (!summary.isAvailable()) {
-            return "Warm-up Summary" + System.lineSeparator()
-                    + "Collect more samples. Current: " + summary.getSampleCount();
+            warmupCpuLabel.setText("Collect more samples (" + summary.getSampleCount() + ")");
+            warmupHeapLabel.setText("Collect more samples");
+        } else {
+            warmupCpuLabel.setText(formatValue(summary.getEarlyAverageCpu())
+                    + " -> " + formatValue(summary.getLateAverageCpu())
+                    + " (" + formatSignedValue(summary.getCpuChange()) + " %)");
+            warmupHeapLabel.setText(formatValue(summary.getEarlyAverageHeap())
+                    + " -> " + formatValue(summary.getLateAverageHeap())
+                    + " (" + formatSignedValue(summary.getHeapChange()) + " MB)");
         }
 
-        return "Warm-up Summary" + System.lineSeparator()
-                + "CPU early avg: " + formatValue(summary.getEarlyAverageCpu()) + " %" + System.lineSeparator()
-                + "CPU late avg: " + formatValue(summary.getLateAverageCpu()) + " %" + System.lineSeparator()
-                + "CPU change: " + formatSignedValue(summary.getCpuChange()) + " %" + System.lineSeparator()
-                + "Heap early avg: " + formatValue(summary.getEarlyAverageHeap()) + " MB" + System.lineSeparator()
-                + "Heap late avg: " + formatValue(summary.getLateAverageHeap()) + " MB" + System.lineSeparator()
-                + "Heap change: " + formatSignedValue(summary.getHeapChange()) + " MB";
-    }
-
-    private String formatStabilityPoint(WarmupStabilityPoint point) {
-        if (!point.isAvailable()) {
-            return "Warm-up Stability" + System.lineSeparator()
-                    + "Estimated stable point: Not available" + System.lineSeparator()
-                    + "Samples checked: " + point.getSampleCount();
+        if (!stabilityPoint.isAvailable()) {
+            stabilityLabel.setText("Not available");
+            return;
         }
-
-        return "Warm-up Stability" + System.lineSeparator()
-                + "Estimated stable point: sample " + point.getSampleIndex() + System.lineSeparator()
-                + "CPU range: " + formatValue(point.getCpuRangePercent()) + " %" + System.lineSeparator()
-                + "JIT events in window: " + point.getJitEventCount();
+        stabilityLabel.setText("Sample " + stabilityPoint.getSampleIndex()
+                + ", CPU range " + formatValue(stabilityPoint.getCpuRangePercent())
+                + " %, JIT " + stabilityPoint.getJitEventCount());
     }
 
-    private String formatJitLogStatus(JitLogStatus status, String filterText) {
-        return "JIT Log Status" + System.lineSeparator()
-                + "State: " + status.getStateLabel() + System.lineSeparator()
-                + "Path: " + status.getLogPath() + System.lineSeparator()
-                + "Filter: " + formatFilterText(filterText) + System.lineSeparator()
-                + "Detail: " + status.getDetail();
+    private void updateJit(JitLogStatus status, String filterText, JitEventSummary summary) {
+        String logText = status.getStateLabel() + " - " + compactPath(status.getLogPath());
+        jitLogLabel.setText(logText);
+        jitLogLabel.setToolTipText("Path: " + status.getLogPath()
+                + " / Filter: " + formatFilterText(filterText)
+                + " / Detail: " + status.getDetail());
+        jitEventsLabel.setText(summary.getTotalEventCount()
+                + " total / " + summary.getMatchedEventCount() + " shown");
+        setCompactText(jitTopMethodsLabel, formatTopMethods(summary), 72);
     }
 
-    private String formatJitSummary(JitEventSummary summary) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("JIT Summary").append(System.lineSeparator())
-                .append("Events: ")
-                .append(summary.getTotalEventCount())
-                .append(" total / ")
-                .append(summary.getMatchedEventCount())
-                .append(" shown");
+    private void updateJfr(
+            JfrAvailabilityStatus availabilityStatus,
+            JfrRecordingStatus recordingStatus,
+            JfrEventSummary eventSummary) {
+        jfrAvailabilityLabel.setText(availabilityStatus.getStateLabel());
+        jfrAvailabilityLabel.setToolTipText(availabilityStatus.getDetail());
+        jfrRecordingLabel.setText(recordingStatus.getStateLabel());
+        jfrRecordingLabel.setToolTipText(recordingStatus.getDetail());
 
+        if (!eventSummary.isAvailable()) {
+            jfrEventsLabel.setText("Unavailable");
+            jfrEventsLabel.setToolTipText(eventSummary.getDetail());
+            jfrFileLabel.setText("-");
+            jfrFileLabel.setToolTipText(null);
+            return;
+        }
+        jfrEventsLabel.setText(eventSummary.getTotalEventCount()
+                + " total, " + eventSummary.getCompilationEventCount()
+                + " compilation, " + eventSummary.getGcEventCount() + " GC");
+        setCompactText(jfrFileLabel, compactPath(eventSummary.getSourcePath()), 72);
+    }
+
+    private String formatTopMethods(JitEventSummary summary) {
         if (!summary.hasMatchedEvents()) {
-            return builder.append(System.lineSeparator())
-                    .append("No matching JIT events.")
-                    .toString();
+            return "No matching events";
         }
 
-        builder.append(System.lineSeparator())
-                .append("Latest: ")
-                .append(summary.getLatestMethodName())
-                .append(System.lineSeparator())
-                .append("Top methods:");
-
-        int rank = 1;
+        StringBuilder builder = new StringBuilder();
+        int count = 0;
         for (JitMethodCount method : summary.getTopMethods()) {
-            builder.append(System.lineSeparator())
-                    .append(rank)
-                    .append(". ")
-                    .append(method.getMethodName())
-                    .append(" (")
-                    .append(method.getCount())
-                    .append(")");
-            rank++;
+            if (count >= MAX_TOP_METHODS) {
+                break;
+            }
+            if (count > 0) {
+                builder.append(", ");
+            }
+            builder.append(method.getMethodName()).append(" (").append(method.getCount()).append(")");
+            count++;
         }
         return builder.toString();
     }
 
-    private String formatJfrStatus(JfrAvailabilityStatus status, JfrRecordingStatus recordingStatus) {
-        return "JFR Status" + System.lineSeparator()
-                + "Availability: " + status.getStateLabel() + System.lineSeparator()
-                + "Recording: " + recordingStatus.getStateLabel() + System.lineSeparator()
-                + "Runtime: " + status.getDetail() + System.lineSeparator()
-                + "Recording detail: " + recordingStatus.getDetail();
+    private String compactPath(Path path) {
+        if (path == null) {
+            return "-";
+        }
+        Path fileName = path.getFileName();
+        return fileName == null ? path.toString() : fileName.toString();
     }
 
-    private String formatJfrEventSummary(JfrEventSummary summary) {
-        if (!summary.isAvailable()) {
-            return "JFR Event Summary" + System.lineSeparator()
-                    + "State: Unavailable" + System.lineSeparator()
-                    + "Detail: " + summary.getDetail();
+    private void setCompactText(JLabel label, String value, int maxLength) {
+        if (value == null || value.isBlank()) {
+            label.setText("-");
+            label.setToolTipText(null);
+            return;
         }
-        return "JFR Event Summary" + System.lineSeparator()
-                + "Total events: " + summary.getTotalEventCount() + System.lineSeparator()
-                + "Compilation events: " + summary.getCompilationEventCount() + System.lineSeparator()
-                + "GC events: " + summary.getGcEventCount() + System.lineSeparator()
-                + "Source: " + summary.getSourcePath();
+        if (value.length() <= maxLength) {
+            label.setText(value);
+            label.setToolTipText(null);
+            return;
+        }
+        label.setText(value.substring(0, maxLength - 3) + "...");
+        label.setToolTipText(value);
     }
 
     private String formatValue(double value) {
@@ -202,8 +393,8 @@ public class SummaryPanel extends JPanel {
         if (!sample.isGcAvailable()) {
             return "Unavailable";
         }
-        return "count +" + sample.getGcCountDelta()
-                + ", time +" + sample.getGcTimeDeltaMillis() + " ms";
+        return "+" + sample.getGcCountDelta()
+                + " collections, +" + sample.getGcTimeDeltaMillis() + " ms";
     }
 
     private String formatSignedValue(double value) {
@@ -215,5 +406,15 @@ public class SummaryPanel extends JPanel {
             return "<none>";
         }
         return filterText;
+    }
+
+    private static class Field {
+        private final String name;
+        private final JLabel valueLabel;
+
+        private Field(String name, JLabel valueLabel) {
+            this.name = name;
+            this.valueLabel = valueLabel;
+        }
     }
 }
