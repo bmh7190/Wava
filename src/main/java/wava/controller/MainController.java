@@ -8,6 +8,7 @@ import java.util.List;
 import javax.swing.SwingUtilities;
 import wava.model.graph.GraphMarker;
 import wava.model.jfr.JfrAvailabilityStatus;
+import wava.model.jfr.JfrEventSummary;
 import wava.model.jfr.JfrRecordingStatus;
 import wava.model.process.JavaProcessInfo;
 import wava.model.jit.JitEvent;
@@ -24,6 +25,7 @@ import wava.service.jit.JitEventFilter;
 import wava.service.jit.JitLogReader;
 import wava.service.jit.JitSummaryAnalyzer;
 import wava.service.jfr.JfrAvailabilityChecker;
+import wava.service.jfr.JfrEventSummaryReader;
 import wava.service.jfr.TargetJfrRecorder;
 import wava.service.metric.MonitorService;
 import wava.service.process.ProcessStatusChecker;
@@ -41,6 +43,7 @@ public class MainController {
     private final JitLogReader jitLogReader;
     private final CsvExportService csvExportService;
     private final JfrAvailabilityChecker jfrAvailabilityChecker;
+    private final JfrEventSummaryReader jfrEventSummaryReader;
     private final TargetJfrRecorder targetJfrRecorder;
     private final WarmupAnalyzer warmupAnalyzer;
     private final WarmupStabilityAnalyzer warmupStabilityAnalyzer;
@@ -52,6 +55,7 @@ public class MainController {
     private String lastJitLogStatusKey;
     private JfrAvailabilityStatus jfrStatus;
     private JfrRecordingStatus jfrRecordingStatus;
+    private JfrEventSummary jfrEventSummary;
     private TargetProcessStatus targetProcessStatus;
     private MonitorState monitorState;
     private JavaProcessInfo selectedProcess;
@@ -64,6 +68,7 @@ public class MainController {
         jitLogReader = new JitLogReader();
         csvExportService = new CsvExportService();
         jfrAvailabilityChecker = new JfrAvailabilityChecker();
+        jfrEventSummaryReader = new JfrEventSummaryReader();
         targetJfrRecorder = new TargetJfrRecorder();
         warmupAnalyzer = new WarmupAnalyzer();
         warmupStabilityAnalyzer = new WarmupStabilityAnalyzer();
@@ -75,6 +80,7 @@ public class MainController {
         lastJitLogStatusKey = "";
         jfrStatus = jfrAvailabilityChecker.check();
         jfrRecordingStatus = JfrRecordingStatus.idle();
+        jfrEventSummary = JfrEventSummary.empty();
         targetProcessStatus = TargetProcessStatus.UNKNOWN;
         monitorState = MonitorState.IDLE;
         bindActions();
@@ -122,6 +128,7 @@ public class MainController {
         stopJfrRecording();
         monitorService.stop();
         updateState(MonitorState.STOPPED);
+        refreshMonitoringSummary();
         frame.getLogPanel().appendInfo("Monitoring stopped.");
     }
 
@@ -131,6 +138,7 @@ public class MainController {
         jitLogReader.reset();
         jitEvents.clear();
         jfrRecordingStatus = JfrRecordingStatus.idle();
+        jfrEventSummary = JfrEventSummary.empty();
         targetProcessStatus = TargetProcessStatus.UNKNOWN;
         updateState(MonitorState.IDLE);
         frame.getLogPanel().clear();
@@ -195,26 +203,7 @@ public class MainController {
     private void showMetricSamples(List<MetricSample> samples) {
         SwingUtilities.invokeLater(() -> {
             showJitEvents();
-            targetProcessStatus = processStatusChecker.check(selectedProcess);
-            WarmupSummary summary = warmupAnalyzer.analyze(samples);
-            WarmupStabilityPoint stabilityPoint = warmupStabilityAnalyzer.analyze(samples, jitEvents, jitEventFilter);
-            JitEventSummary jitSummary = jitSummaryAnalyzer.analyze(jitEvents, jitEventFilter);
-            List<GraphMarker> markers = createGraphMarkers(samples, stabilityPoint);
-            frame.getCpuGraphPanel().setSamples(samples, extractCpuValues(samples));
-            frame.getCpuGraphPanel().setMarkers(markers);
-            frame.getMemoryGraphPanel().setSamples(samples, extractMemoryValues(samples));
-            frame.getMemoryGraphPanel().setMarkers(markers);
-            frame.getSummaryPanel().showMonitoringSummary(
-                    selectedProcess,
-                    targetProcessStatus,
-                    samples,
-                    summary,
-                    stabilityPoint,
-                    jitLogStatus,
-                    jitFilterText,
-                    jfrStatus,
-                    jfrRecordingStatus,
-                    jitSummary);
+            showMonitoringData(samples);
             if (targetProcessStatus == TargetProcessStatus.ENDED) {
                 stopEndedTargetProcess();
             }
@@ -228,6 +217,7 @@ public class MainController {
         monitorService.stop();
         stopJfrRecording();
         updateState(MonitorState.STOPPED);
+        refreshMonitoringSummary();
         frame.getLogPanel().appendInfo("Target process ended. Monitoring stopped.");
     }
 
@@ -238,6 +228,7 @@ public class MainController {
             return;
         }
         jfrRecordingStatus = targetJfrRecorder.start(selectedProcess);
+        jfrEventSummary = JfrEventSummary.empty();
         frame.getLogPanel().appendInfo(jfrRecordingStatus.formatLogMessage());
     }
 
@@ -247,6 +238,41 @@ public class MainController {
         }
         jfrRecordingStatus = targetJfrRecorder.stop(selectedProcess, jfrRecordingStatus);
         frame.getLogPanel().appendInfo(jfrRecordingStatus.formatLogMessage());
+        if (jfrRecordingStatus.hasOutputPath()) {
+            jfrEventSummary = jfrEventSummaryReader.read(jfrRecordingStatus.getOutputPath());
+            frame.getLogPanel().appendInfo(jfrEventSummary.formatLogMessage());
+        }
+    }
+
+    private void refreshMonitoringSummary() {
+        List<MetricSample> samples = monitorService.getSamples();
+        if (!samples.isEmpty()) {
+            showMonitoringData(samples);
+        }
+    }
+
+    private void showMonitoringData(List<MetricSample> samples) {
+        targetProcessStatus = processStatusChecker.check(selectedProcess);
+        WarmupSummary summary = warmupAnalyzer.analyze(samples);
+        WarmupStabilityPoint stabilityPoint = warmupStabilityAnalyzer.analyze(samples, jitEvents, jitEventFilter);
+        JitEventSummary jitSummary = jitSummaryAnalyzer.analyze(jitEvents, jitEventFilter);
+        List<GraphMarker> markers = createGraphMarkers(samples, stabilityPoint);
+        frame.getCpuGraphPanel().setSamples(samples, extractCpuValues(samples));
+        frame.getCpuGraphPanel().setMarkers(markers);
+        frame.getMemoryGraphPanel().setSamples(samples, extractMemoryValues(samples));
+        frame.getMemoryGraphPanel().setMarkers(markers);
+        frame.getSummaryPanel().showMonitoringSummary(
+                selectedProcess,
+                targetProcessStatus,
+                samples,
+                summary,
+                stabilityPoint,
+                jitLogStatus,
+                jitFilterText,
+                jfrStatus,
+                jfrRecordingStatus,
+                jfrEventSummary,
+                jitSummary);
     }
 
     private void showJitEvents() {

@@ -7,6 +7,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import wava.model.jfr.JfrAvailabilityStatus;
+import wava.model.jfr.JfrEventSummary;
 import wava.model.jfr.JfrRecordingStatus;
 import wava.model.process.JavaProcessInfo;
 import wava.model.jit.JitEventSummary;
@@ -65,6 +66,7 @@ public class SummaryPanel extends JPanel {
             String jitFilterText,
             JfrAvailabilityStatus jfrStatus,
             JfrRecordingStatus jfrRecordingStatus,
+            JfrEventSummary jfrEventSummary,
             JitEventSummary jitSummary) {
         if (process == null || samples.isEmpty()) {
             showSelectedProcess(process);
@@ -87,6 +89,8 @@ public class SummaryPanel extends JPanel {
                 + formatJitLogStatus(jitLogStatus, jitFilterText) + System.lineSeparator()
                 + System.lineSeparator()
                 + formatJfrStatus(jfrStatus, jfrRecordingStatus) + System.lineSeparator()
+                + System.lineSeparator()
+                + formatJfrEventSummary(jfrEventSummary) + System.lineSeparator()
                 + System.lineSeparator()
                 + formatJitSummary(jitSummary));
     }
@@ -168,6 +172,19 @@ public class SummaryPanel extends JPanel {
                 + "Recording: " + recordingStatus.getStateLabel() + System.lineSeparator()
                 + "Runtime: " + status.getDetail() + System.lineSeparator()
                 + "Recording detail: " + recordingStatus.getDetail();
+    }
+
+    private String formatJfrEventSummary(JfrEventSummary summary) {
+        if (!summary.isAvailable()) {
+            return "JFR Event Summary" + System.lineSeparator()
+                    + "State: Unavailable" + System.lineSeparator()
+                    + "Detail: " + summary.getDetail();
+        }
+        return "JFR Event Summary" + System.lineSeparator()
+                + "Total events: " + summary.getTotalEventCount() + System.lineSeparator()
+                + "Compilation events: " + summary.getCompilationEventCount() + System.lineSeparator()
+                + "GC events: " + summary.getGcEventCount() + System.lineSeparator()
+                + "Source: " + summary.getSourcePath();
     }
 
     private String formatValue(double value) {
