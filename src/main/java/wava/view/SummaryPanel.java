@@ -6,6 +6,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import wava.model.jfr.JfrAvailabilityStatus;
 import wava.model.process.JavaProcessInfo;
 import wava.model.jit.JitEventSummary;
 import wava.model.jit.JitLogStatus;
@@ -61,6 +62,7 @@ public class SummaryPanel extends JPanel {
             WarmupStabilityPoint stabilityPoint,
             JitLogStatus jitLogStatus,
             String jitFilterText,
+            JfrAvailabilityStatus jfrStatus,
             JitEventSummary jitSummary) {
         if (process == null || samples.isEmpty()) {
             showSelectedProcess(process);
@@ -81,6 +83,8 @@ public class SummaryPanel extends JPanel {
                 + formatStabilityPoint(stabilityPoint) + System.lineSeparator()
                 + System.lineSeparator()
                 + formatJitLogStatus(jitLogStatus, jitFilterText) + System.lineSeparator()
+                + System.lineSeparator()
+                + formatJfrStatus(jfrStatus) + System.lineSeparator()
                 + System.lineSeparator()
                 + formatJitSummary(jitSummary));
     }
@@ -154,6 +158,12 @@ public class SummaryPanel extends JPanel {
             rank++;
         }
         return builder.toString();
+    }
+
+    private String formatJfrStatus(JfrAvailabilityStatus status) {
+        return "JFR Status" + System.lineSeparator()
+                + "State: " + status.getStateLabel() + System.lineSeparator()
+                + "Detail: " + status.getDetail();
     }
 
     private String formatValue(double value) {

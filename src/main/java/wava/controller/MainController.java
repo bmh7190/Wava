@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.SwingUtilities;
 import wava.model.graph.GraphMarker;
+import wava.model.jfr.JfrAvailabilityStatus;
 import wava.model.process.JavaProcessInfo;
 import wava.model.jit.JitEvent;
 import wava.model.jit.JitEventSummary;
@@ -21,6 +22,7 @@ import wava.service.process.JavaProcessScanner;
 import wava.service.jit.JitEventFilter;
 import wava.service.jit.JitLogReader;
 import wava.service.jit.JitSummaryAnalyzer;
+import wava.service.jfr.JfrAvailabilityChecker;
 import wava.service.metric.MonitorService;
 import wava.service.process.ProcessStatusChecker;
 import wava.service.warmup.WarmupAnalyzer;
@@ -36,6 +38,7 @@ public class MainController {
     private final ProcessStatusChecker processStatusChecker;
     private final JitLogReader jitLogReader;
     private final CsvExportService csvExportService;
+    private final JfrAvailabilityChecker jfrAvailabilityChecker;
     private final WarmupAnalyzer warmupAnalyzer;
     private final WarmupStabilityAnalyzer warmupStabilityAnalyzer;
     private final JitSummaryAnalyzer jitSummaryAnalyzer;
@@ -44,6 +47,7 @@ public class MainController {
     private JitLogStatus jitLogStatus;
     private String jitFilterText;
     private String lastJitLogStatusKey;
+    private JfrAvailabilityStatus jfrStatus;
     private TargetProcessStatus targetProcessStatus;
     private MonitorState monitorState;
     private JavaProcessInfo selectedProcess;
@@ -55,6 +59,7 @@ public class MainController {
         processStatusChecker = new ProcessStatusChecker();
         jitLogReader = new JitLogReader();
         csvExportService = new CsvExportService();
+        jfrAvailabilityChecker = new JfrAvailabilityChecker();
         warmupAnalyzer = new WarmupAnalyzer();
         warmupStabilityAnalyzer = new WarmupStabilityAnalyzer();
         jitSummaryAnalyzer = new JitSummaryAnalyzer();
@@ -63,10 +68,12 @@ public class MainController {
         jitLogStatus = jitLogReader.inspectStatus();
         jitFilterText = "";
         lastJitLogStatusKey = "";
+        jfrStatus = jfrAvailabilityChecker.check();
         targetProcessStatus = TargetProcessStatus.UNKNOWN;
         monitorState = MonitorState.IDLE;
         bindActions();
         updateState(MonitorState.IDLE);
+        frame.getLogPanel().appendInfo(jfrStatus.formatLogMessage());
     }
 
     public void start() {
@@ -195,6 +202,7 @@ public class MainController {
                     stabilityPoint,
                     jitLogStatus,
                     jitFilterText,
+                    jfrStatus,
                     jitSummary);
             if (targetProcessStatus == TargetProcessStatus.ENDED) {
                 stopEndedTargetProcess();
