@@ -1,7 +1,6 @@
 package wava.view;
 
 import java.awt.BorderLayout;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -179,25 +178,28 @@ public class LiveMetricsPanel extends JPanel {
     private JLabel createSectionTitleLabel(String text) {
         JLabel label = new JLabel(text);
         label.setForeground(UiStyle.TEXT);
-        label.setFont(label.getFont().deriveFont(Font.BOLD));
+        label.setFont(UiStyle.APP_FONT_BOLD);
         return label;
     }
 
     private JLabel createNameLabel(String text) {
         JLabel label = new JLabel(text);
         label.setForeground(UiStyle.MUTED_TEXT);
+        label.setFont(UiStyle.APP_FONT);
         return label;
     }
 
     private JLabel createMutedLabel() {
         JLabel label = new JLabel();
         label.setForeground(UiStyle.MUTED_TEXT);
+        label.setFont(UiStyle.APP_FONT);
         return label;
     }
 
     private JLabel createValueLabel() {
         JLabel label = new JLabel("-");
         label.setForeground(UiStyle.TEXT);
+        label.setFont(UiStyle.APP_FONT);
         return label;
     }
 

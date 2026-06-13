@@ -23,6 +23,10 @@ public class ControlPanel extends JPanel {
         resetButton = new JButton("Reset");
         exportButton = new JButton("Export CSV");
         stateLabel = new JLabel();
+        UiStyle.applyPrimaryButtonStyle(startButton);
+        UiStyle.applyButtonStyle(stopButton);
+        UiStyle.applyButtonStyle(resetButton);
+        UiStyle.applyButtonStyle(exportButton);
 
         add(startButton);
         add(stopButton);

@@ -29,18 +29,26 @@ public class LogPanel extends JPanel {
         logArea.setEditable(false);
         logArea.setRows(8);
         logArea.setLineWrap(false);
+        UiStyle.applyTextAreaStyle(logArea);
 
         logPathField = new JTextField("logs/jit.log");
         filterField = new JTextField();
+        UiStyle.applyTextFieldStyle(logPathField);
+        UiStyle.applyTextFieldStyle(filterField);
         applyButton = new JButton("Apply JIT Settings");
         browseButton = new JButton("Browse");
+        UiStyle.applyPrimaryButtonStyle(applyButton);
+        UiStyle.applyButtonStyle(browseButton);
         browseButton.addActionListener(event -> chooseLogFile());
 
         JButton clearButton = new JButton("Clear Log");
+        UiStyle.applyButtonStyle(clearButton);
         clearButton.addActionListener(event -> clear());
 
         settingsPanel = createSettingsPanel();
-        add(new JScrollPane(logArea), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(logArea);
+        UiStyle.applyScrollPaneStyle(scrollPane);
+        add(scrollPane, BorderLayout.CENTER);
         add(clearButton, BorderLayout.SOUTH);
     }
 

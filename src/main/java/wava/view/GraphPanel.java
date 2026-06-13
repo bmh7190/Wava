@@ -98,7 +98,7 @@ public class GraphPanel extends JPanel {
         int right = getWidth() - RIGHT_PADDING;
         int bottom = getHeight() - BOTTOM_PADDING;
 
-        g2.setColor(new Color(248, 250, 252));
+        g2.setColor(UiStyle.SURFACE);
         g2.fillRect(left, top, right - left, bottom - top);
         g2.setColor(UiStyle.BORDER);
         g2.drawRect(left, top, right - left, bottom - top);
@@ -136,7 +136,7 @@ public class GraphPanel extends JPanel {
         int bottom = getHeight() - BOTTOM_PADDING;
         int x = left + (right - left - metrics.stringWidth(message)) / 2;
         int y = top + (bottom - top) / 2;
-        g2.setColor(new Color(105, 105, 105));
+        g2.setColor(UiStyle.MUTED_TEXT);
         g2.drawString(message, x, y);
     }
 

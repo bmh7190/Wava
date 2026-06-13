@@ -29,16 +29,20 @@ public class ProcessPanel extends JPanel {
         UiStyle.applyPanelStyle(this, "Java Processes");
 
         refreshButton = new JButton("Refresh Processes");
+        UiStyle.applyButtonStyle(refreshButton);
         statusLabel = new JLabel("No process loaded");
         statusLabel.setForeground(UiStyle.MUTED_TEXT);
         processListModel = new DefaultListModel<>();
         processList = new JList<>(processListModel);
+        UiStyle.applyListStyle(processList);
         processList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         processList.setVisibleRowCount(12);
         processList.addListSelectionListener(event -> notifySelectionChanged());
 
         add(createHeaderPanel(), BorderLayout.NORTH);
-        add(new JScrollPane(processList), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(processList);
+        UiStyle.applyScrollPaneStyle(scrollPane);
+        add(scrollPane, BorderLayout.CENTER);
     }
 
     public void setRefreshAction(ActionListener listener) {
