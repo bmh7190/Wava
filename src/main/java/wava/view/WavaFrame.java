@@ -3,6 +3,8 @@ package wava.view;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -15,8 +17,10 @@ public class WavaFrame extends JFrame {
     private static final int DEFAULT_HEIGHT = 720;
     private static final int LEFT_PANEL_WIDTH = 260;
     private static final int BOTTOM_PANEL_HEIGHT = 180;
+    private static final int LIVE_METRICS_PANEL_HEIGHT = 190;
 
     private final ProcessPanel processPanel;
+    private final LiveMetricsPanel liveMetricsPanel;
     private final ControlPanel controlPanel;
     private final GraphPanel cpuGraphPanel;
     private final GraphPanel memoryGraphPanel;
@@ -26,6 +30,7 @@ public class WavaFrame extends JFrame {
     public WavaFrame() {
         super("Wava");
         processPanel = new ProcessPanel();
+        liveMetricsPanel = new LiveMetricsPanel();
         controlPanel = new ControlPanel();
         cpuGraphPanel = new GraphPanel("CPU Usage", "%", GraphScaleMode.FIXED);
         memoryGraphPanel = new GraphPanel("Heap Memory", "MB", GraphScaleMode.AUTO);
@@ -74,9 +79,20 @@ public class WavaFrame extends JFrame {
 
         JPanel settingsPanel = logPanel.getSettingsPanel();
         settingsPanel.setPreferredSize(new Dimension(LEFT_PANEL_WIDTH, BOTTOM_PANEL_HEIGHT));
+        liveMetricsPanel.setPreferredSize(new Dimension(LEFT_PANEL_WIDTH, LIVE_METRICS_PANEL_HEIGHT));
 
         panel.add(processPanel, BorderLayout.CENTER);
-        panel.add(settingsPanel, BorderLayout.SOUTH);
+        panel.add(createLeftBottomPanel(settingsPanel), BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private JPanel createLeftBottomPanel(JPanel settingsPanel) {
+        JPanel panel = new JPanel();
+        panel.setOpaque(false);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.add(liveMetricsPanel);
+        panel.add(Box.createVerticalStrut(12));
+        panel.add(settingsPanel);
         return panel;
     }
 
@@ -111,6 +127,10 @@ public class WavaFrame extends JFrame {
 
     public ProcessPanel getProcessPanel() {
         return processPanel;
+    }
+
+    public LiveMetricsPanel getLiveMetricsPanel() {
+        return liveMetricsPanel;
     }
 
     public ControlPanel getControlPanel() {

@@ -106,6 +106,7 @@ public class MainController {
         if (selectedProcess == null) {
             frame.getLogPanel().appendInfo("Select a Java process before starting monitoring.");
             frame.getSummaryPanel().showMessage("No process selected.");
+            frame.getLiveMetricsPanel().showSelectedProcess(null);
             return;
         }
         targetProcessStatus = processStatusChecker.check(selectedProcess);
@@ -146,6 +147,7 @@ public class MainController {
         frame.getCpuGraphPanel().clearData();
         frame.getMemoryGraphPanel().clearData();
         frame.getSummaryPanel().showSelectedProcess(selectedProcess);
+        frame.getLiveMetricsPanel().showSelectedProcess(selectedProcess);
     }
 
     private void exportCsv(ActionEvent event) {
@@ -172,6 +174,7 @@ public class MainController {
             selectedProcess = null;
             frame.getProcessPanel().showProcesses(processes);
             frame.getSummaryPanel().showMessage("No process selected.");
+            frame.getLiveMetricsPanel().showSelectedProcess(null);
             if (processes.isEmpty()) {
                 frame.getLogPanel().appendInfo("No Java process found.");
             } else {
@@ -181,6 +184,7 @@ public class MainController {
             selectedProcess = null;
             frame.getProcessPanel().showPlaceholder();
             frame.getSummaryPanel().showMessage("Failed to load processes.");
+            frame.getLiveMetricsPanel().showSelectedProcess(null);
             frame.getLogPanel().appendInfo("Failed to load Java processes: " + exception.getMessage());
         }
     }
@@ -189,6 +193,7 @@ public class MainController {
         selectedProcess = process;
         targetProcessStatus = processStatusChecker.check(process);
         frame.getSummaryPanel().showSelectedProcess(process);
+        frame.getLiveMetricsPanel().showSelectedProcess(process);
         if (process != null) {
             frame.getLogPanel().appendInfo("Selected process " + process.formatListItem() + ".");
         }
@@ -261,12 +266,14 @@ public class MainController {
         frame.getCpuGraphPanel().setMarkers(markers);
         frame.getMemoryGraphPanel().setSamples(samples, extractMemoryValues(samples));
         frame.getMemoryGraphPanel().setMarkers(markers);
-        frame.getSummaryPanel().showMonitoringSummary(
+        MetricSample latestSample = samples.get(samples.size() - 1);
+        frame.getLiveMetricsPanel().showMonitoringData(
                 selectedProcess,
-                targetProcessStatus,
-                samples,
+                latestSample,
                 summary,
-                stabilityPoint,
+                stabilityPoint);
+        frame.getSummaryPanel().showEventSummary(
+                selectedProcess,
                 jitLogStatus,
                 jitFilterText,
                 jfrStatus,

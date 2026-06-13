@@ -6,7 +6,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.nio.file.Path;
-import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -22,12 +21,8 @@ import wava.model.jfr.JfrRecordingStatus;
 import wava.model.jit.JitEventSummary;
 import wava.model.jit.JitLogStatus;
 import wava.model.jit.JitMethodCount;
-import wava.model.metric.MetricSample;
 import wava.model.monitor.MonitorState;
 import wava.model.process.JavaProcessInfo;
-import wava.model.process.TargetProcessStatus;
-import wava.model.warmup.WarmupStabilityPoint;
-import wava.model.warmup.WarmupSummary;
 
 public class SummaryPanel extends JPanel {
     private static final int SECTION_GAP = 8;
@@ -35,12 +30,6 @@ public class SummaryPanel extends JPanel {
 
     private final JLabel stateLabel;
     private final JLabel noticeLabel;
-    private final JLabel cpuLabel;
-    private final JLabel heapLabel;
-    private final JLabel gcLabel;
-    private final JLabel warmupCpuLabel;
-    private final JLabel warmupHeapLabel;
-    private final JLabel stabilityLabel;
     private final JLabel jitLogLabel;
     private final JLabel jitEventsLabel;
     private final JLabel jitTopMethodsLabel;
@@ -55,12 +44,6 @@ public class SummaryPanel extends JPanel {
 
         stateLabel = createValueLabel();
         noticeLabel = createNoticeLabel();
-        cpuLabel = createValueLabel();
-        heapLabel = createValueLabel();
-        gcLabel = createValueLabel();
-        warmupCpuLabel = createValueLabel();
-        warmupHeapLabel = createValueLabel();
-        stabilityLabel = createValueLabel();
         jitLogLabel = createValueLabel();
         jitEventsLabel = createValueLabel();
         jitTopMethodsLabel = createValueLabel();
@@ -92,27 +75,20 @@ public class SummaryPanel extends JPanel {
         showMessage("Selected: " + process.getDisplayName());
     }
 
-    public void showMonitoringSummary(
+    public void showEventSummary(
             JavaProcessInfo process,
-            TargetProcessStatus targetProcessStatus,
-            List<MetricSample> samples,
-            WarmupSummary summary,
-            WarmupStabilityPoint stabilityPoint,
             JitLogStatus jitLogStatus,
             String jitFilterText,
             JfrAvailabilityStatus jfrStatus,
             JfrRecordingStatus jfrRecordingStatus,
             JfrEventSummary jfrEventSummary,
             JitEventSummary jitSummary) {
-        if (process == null || samples.isEmpty()) {
+        if (process == null) {
             showSelectedProcess(process);
             return;
         }
 
-        MetricSample latestSample = samples.get(samples.size() - 1);
-        updateHeader(process, targetProcessStatus, samples.size());
-        updateLatestMetrics(latestSample);
-        updateWarmup(summary, stabilityPoint);
+        updateHeader(process);
         updateJit(jitLogStatus, jitFilterText, jitSummary);
         updateJfr(jfrStatus, jfrRecordingStatus, jfrEventSummary);
     }
@@ -131,16 +107,6 @@ public class SummaryPanel extends JPanel {
         JPanel contentPanel = new JPanel();
         contentPanel.setOpaque(false);
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-        contentPanel.add(createSectionPanel("Latest Metrics",
-                new Field("CPU", cpuLabel),
-                new Field("Heap", heapLabel),
-                new Field("GC", gcLabel)));
-        contentPanel.add(Box.createVerticalStrut(SECTION_GAP));
-        contentPanel.add(createSectionPanel("Warm-up",
-                new Field("CPU", warmupCpuLabel),
-                new Field("Heap", warmupHeapLabel),
-                new Field("Stable", stabilityLabel)));
-        contentPanel.add(Box.createVerticalStrut(SECTION_GAP));
         contentPanel.add(createSectionPanel("JIT",
                 new Field("Log", jitLogLabel),
                 new Field("Events", jitEventsLabel),
@@ -224,12 +190,6 @@ public class SummaryPanel extends JPanel {
     }
 
     private void resetSummaryValues() {
-        cpuLabel.setText("-");
-        heapLabel.setText("-");
-        gcLabel.setText("-");
-        warmupCpuLabel.setText("-");
-        warmupHeapLabel.setText("-");
-        stabilityLabel.setText("-");
         jitLogLabel.setText("-");
         jitLogLabel.setToolTipText(null);
         jitEventsLabel.setText("-");
@@ -242,39 +202,8 @@ public class SummaryPanel extends JPanel {
         jfrFileLabel.setToolTipText(null);
     }
 
-    private void updateHeader(JavaProcessInfo process, TargetProcessStatus targetProcessStatus, int sampleCount) {
-        String targetText = process.getDisplayName()
-                + " | " + targetProcessStatus.getLabel()
-                + " | " + sampleCount + " samples";
-        setCompactText(noticeLabel, targetText, 80);
-    }
-
-    private void updateLatestMetrics(MetricSample latestSample) {
-        cpuLabel.setText(formatValue(latestSample.getCpuUsagePercent()) + " %");
-        heapLabel.setText(formatHeapValue(latestSample));
-        gcLabel.setText(formatGcValue(latestSample));
-    }
-
-    private void updateWarmup(WarmupSummary summary, WarmupStabilityPoint stabilityPoint) {
-        if (!summary.isAvailable()) {
-            warmupCpuLabel.setText("Collect more samples (" + summary.getSampleCount() + ")");
-            warmupHeapLabel.setText("Collect more samples");
-        } else {
-            warmupCpuLabel.setText(formatValue(summary.getEarlyAverageCpu())
-                    + " -> " + formatValue(summary.getLateAverageCpu())
-                    + " (" + formatSignedValue(summary.getCpuChange()) + " %)");
-            warmupHeapLabel.setText(formatValue(summary.getEarlyAverageHeap())
-                    + " -> " + formatValue(summary.getLateAverageHeap())
-                    + " (" + formatSignedValue(summary.getHeapChange()) + " MB)");
-        }
-
-        if (!stabilityPoint.isAvailable()) {
-            stabilityLabel.setText("Not available");
-            return;
-        }
-        stabilityLabel.setText("Sample " + stabilityPoint.getSampleIndex()
-                + ", CPU range " + formatValue(stabilityPoint.getCpuRangePercent())
-                + " %, JIT " + stabilityPoint.getJitEventCount());
+    private void updateHeader(JavaProcessInfo process) {
+        setCompactText(noticeLabel, process.getDisplayName(), 80);
     }
 
     private void updateJit(JitLogStatus status, String filterText, JitEventSummary summary) {
@@ -351,29 +280,6 @@ public class SummaryPanel extends JPanel {
         }
         label.setText(value.substring(0, maxLength - 3) + "...");
         label.setToolTipText(value);
-    }
-
-    private String formatValue(double value) {
-        return String.format("%.2f", value);
-    }
-
-    private String formatHeapValue(MetricSample sample) {
-        if (!sample.isHeapAvailable()) {
-            return "Unavailable";
-        }
-        return formatValue(sample.getHeapUsedMb()) + " MB";
-    }
-
-    private String formatGcValue(MetricSample sample) {
-        if (!sample.isGcAvailable()) {
-            return "Unavailable";
-        }
-        return "+" + sample.getGcCountDelta()
-                + " collections, +" + sample.getGcTimeDeltaMillis() + " ms";
-    }
-
-    private String formatSignedValue(double value) {
-        return String.format("%+.2f", value);
     }
 
     private String formatFilterText(String filterText) {
