@@ -7,6 +7,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import wava.model.jfr.JfrAvailabilityStatus;
+import wava.model.jfr.JfrRecordingStatus;
 import wava.model.process.JavaProcessInfo;
 import wava.model.jit.JitEventSummary;
 import wava.model.jit.JitLogStatus;
@@ -63,6 +64,7 @@ public class SummaryPanel extends JPanel {
             JitLogStatus jitLogStatus,
             String jitFilterText,
             JfrAvailabilityStatus jfrStatus,
+            JfrRecordingStatus jfrRecordingStatus,
             JitEventSummary jitSummary) {
         if (process == null || samples.isEmpty()) {
             showSelectedProcess(process);
@@ -84,7 +86,7 @@ public class SummaryPanel extends JPanel {
                 + System.lineSeparator()
                 + formatJitLogStatus(jitLogStatus, jitFilterText) + System.lineSeparator()
                 + System.lineSeparator()
-                + formatJfrStatus(jfrStatus) + System.lineSeparator()
+                + formatJfrStatus(jfrStatus, jfrRecordingStatus) + System.lineSeparator()
                 + System.lineSeparator()
                 + formatJitSummary(jitSummary));
     }
@@ -160,10 +162,12 @@ public class SummaryPanel extends JPanel {
         return builder.toString();
     }
 
-    private String formatJfrStatus(JfrAvailabilityStatus status) {
+    private String formatJfrStatus(JfrAvailabilityStatus status, JfrRecordingStatus recordingStatus) {
         return "JFR Status" + System.lineSeparator()
-                + "State: " + status.getStateLabel() + System.lineSeparator()
-                + "Detail: " + status.getDetail();
+                + "Availability: " + status.getStateLabel() + System.lineSeparator()
+                + "Recording: " + recordingStatus.getStateLabel() + System.lineSeparator()
+                + "Runtime: " + status.getDetail() + System.lineSeparator()
+                + "Recording detail: " + recordingStatus.getDetail();
     }
 
     private String formatValue(double value) {

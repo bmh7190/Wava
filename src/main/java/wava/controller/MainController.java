@@ -8,6 +8,7 @@ import java.util.List;
 import javax.swing.SwingUtilities;
 import wava.model.graph.GraphMarker;
 import wava.model.jfr.JfrAvailabilityStatus;
+import wava.model.jfr.JfrRecordingStatus;
 import wava.model.process.JavaProcessInfo;
 import wava.model.jit.JitEvent;
 import wava.model.jit.JitEventSummary;
@@ -23,6 +24,7 @@ import wava.service.jit.JitEventFilter;
 import wava.service.jit.JitLogReader;
 import wava.service.jit.JitSummaryAnalyzer;
 import wava.service.jfr.JfrAvailabilityChecker;
+import wava.service.jfr.TargetJfrRecorder;
 import wava.service.metric.MonitorService;
 import wava.service.process.ProcessStatusChecker;
 import wava.service.warmup.WarmupAnalyzer;
@@ -39,6 +41,7 @@ public class MainController {
     private final JitLogReader jitLogReader;
     private final CsvExportService csvExportService;
     private final JfrAvailabilityChecker jfrAvailabilityChecker;
+    private final TargetJfrRecorder targetJfrRecorder;
     private final WarmupAnalyzer warmupAnalyzer;
     private final WarmupStabilityAnalyzer warmupStabilityAnalyzer;
     private final JitSummaryAnalyzer jitSummaryAnalyzer;
@@ -48,6 +51,7 @@ public class MainController {
     private String jitFilterText;
     private String lastJitLogStatusKey;
     private JfrAvailabilityStatus jfrStatus;
+    private JfrRecordingStatus jfrRecordingStatus;
     private TargetProcessStatus targetProcessStatus;
     private MonitorState monitorState;
     private JavaProcessInfo selectedProcess;
@@ -60,6 +64,7 @@ public class MainController {
         jitLogReader = new JitLogReader();
         csvExportService = new CsvExportService();
         jfrAvailabilityChecker = new JfrAvailabilityChecker();
+        targetJfrRecorder = new TargetJfrRecorder();
         warmupAnalyzer = new WarmupAnalyzer();
         warmupStabilityAnalyzer = new WarmupStabilityAnalyzer();
         jitSummaryAnalyzer = new JitSummaryAnalyzer();
@@ -69,6 +74,7 @@ public class MainController {
         jitFilterText = "";
         lastJitLogStatusKey = "";
         jfrStatus = jfrAvailabilityChecker.check();
+        jfrRecordingStatus = JfrRecordingStatus.idle();
         targetProcessStatus = TargetProcessStatus.UNKNOWN;
         monitorState = MonitorState.IDLE;
         bindActions();
@@ -106,12 +112,14 @@ public class MainController {
         jitLogReader.reset();
         jitEvents.clear();
         updateJitLogStatus(true);
+        startJfrRecording();
         monitorService.start(selectedProcess, this::showMetricSamples);
         frame.getLogPanel().appendInfo("Monitoring started for " + selectedProcess.formatListItem() + ".");
         frame.getLogPanel().appendInfo("Reading JIT log from " + jitLogReader.getLogPath() + ".");
     }
 
     private void stopMonitoring(ActionEvent event) {
+        stopJfrRecording();
         monitorService.stop();
         updateState(MonitorState.STOPPED);
         frame.getLogPanel().appendInfo("Monitoring stopped.");
@@ -119,8 +127,10 @@ public class MainController {
 
     private void resetMonitoring(ActionEvent event) {
         monitorService.reset();
+        stopJfrRecording();
         jitLogReader.reset();
         jitEvents.clear();
+        jfrRecordingStatus = JfrRecordingStatus.idle();
         targetProcessStatus = TargetProcessStatus.UNKNOWN;
         updateState(MonitorState.IDLE);
         frame.getLogPanel().clear();
@@ -203,6 +213,7 @@ public class MainController {
                     jitLogStatus,
                     jitFilterText,
                     jfrStatus,
+                    jfrRecordingStatus,
                     jitSummary);
             if (targetProcessStatus == TargetProcessStatus.ENDED) {
                 stopEndedTargetProcess();
@@ -215,8 +226,27 @@ public class MainController {
             return;
         }
         monitorService.stop();
+        stopJfrRecording();
         updateState(MonitorState.STOPPED);
         frame.getLogPanel().appendInfo("Target process ended. Monitoring stopped.");
+    }
+
+    private void startJfrRecording() {
+        if (!jfrStatus.isAvailable()) {
+            jfrRecordingStatus = JfrRecordingStatus.failed("JFR is not available in the current runtime.");
+            frame.getLogPanel().appendInfo(jfrRecordingStatus.formatLogMessage());
+            return;
+        }
+        jfrRecordingStatus = targetJfrRecorder.start(selectedProcess);
+        frame.getLogPanel().appendInfo(jfrRecordingStatus.formatLogMessage());
+    }
+
+    private void stopJfrRecording() {
+        if (!jfrRecordingStatus.isRecording()) {
+            return;
+        }
+        jfrRecordingStatus = targetJfrRecorder.stop(selectedProcess, jfrRecordingStatus);
+        frame.getLogPanel().appendInfo(jfrRecordingStatus.formatLogMessage());
     }
 
     private void showJitEvents() {
