@@ -39,7 +39,6 @@ import wava.view.WavaFrame;
 
 public class MainController {
     private static final Path DEFAULT_EXPORT_PATH = Path.of("exports", "wava-monitoring.csv");
-    private static final int GRAPH_TIMELINE_STEP = 100;
 
     private final WavaFrame frame;
     private final JavaProcessScanner processScanner;
@@ -113,8 +112,6 @@ public class MainController {
         frame.getGraphViewPanel().setWindowAction(this::changeGraphDisplayRange);
         frame.getGraphViewPanel().setFollowLatestAction(this::changeFollowLatest);
         frame.getGraphViewPanel().setTimelineAction(this::changeGraphPosition);
-        frame.getGraphViewPanel().setPreviousAction(this::showPreviousGraphWindow);
-        frame.getGraphViewPanel().setNextAction(this::showNextGraphWindow);
     }
 
     private void startMonitoring(ActionEvent event) {
@@ -314,16 +311,6 @@ public class MainController {
 
     private void changeGraphPosition(int position) {
         graphViewport = graphViewport.withPosition(position);
-        applyGraphViewport("");
-    }
-
-    private void showPreviousGraphWindow() {
-        graphViewport = graphViewport.shiftPosition(-GRAPH_TIMELINE_STEP);
-        applyGraphViewport("");
-    }
-
-    private void showNextGraphWindow() {
-        graphViewport = graphViewport.shiftPosition(GRAPH_TIMELINE_STEP);
         applyGraphViewport("");
     }
 

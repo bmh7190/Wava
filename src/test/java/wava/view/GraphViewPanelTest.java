@@ -28,8 +28,6 @@ public class GraphViewPanelTest {
         panel.setWindowAction(range -> { });
         panel.setFollowLatestAction(followLatest -> { });
         panel.setTimelineAction(position -> { });
-        panel.setPreviousAction(() -> { });
-        panel.setNextAction(() -> { });
     }
 
     private static void assertTrue(boolean condition, String label) {

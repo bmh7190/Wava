@@ -1,8 +1,10 @@
 package wava.view;
 
-import java.awt.FlowLayout;
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.util.function.Consumer;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -13,40 +15,41 @@ import wava.model.graph.GraphViewport;
 
 public class GraphViewPanel extends JPanel {
     private final JComboBox<GraphDisplayRange> windowComboBox;
-    private final JButton previousButton;
-    private final JButton nextButton;
     private final JSlider timelineSlider;
     private final JCheckBox followLatestCheckBox;
     private boolean updatingControls;
 
     public GraphViewPanel() {
-        super(new FlowLayout(FlowLayout.LEFT, 8, 6));
+        super(new GridBagLayout());
         UiStyle.applyPanelStyle(this, "Graph View");
 
         windowComboBox = new JComboBox<>(GraphDisplayRange.values());
-        previousButton = new JButton("<");
-        nextButton = new JButton(">");
         timelineSlider = new JSlider(GraphViewport.MIN_POSITION, GraphViewport.MAX_POSITION, GraphViewport.MAX_POSITION);
         followLatestCheckBox = new JCheckBox("Follow Latest", true);
 
         UiStyle.applyComboBoxStyle(windowComboBox);
-        UiStyle.applyButtonStyle(previousButton);
-        UiStyle.applyButtonStyle(nextButton);
         UiStyle.applySliderStyle(timelineSlider);
         UiStyle.applyCheckBoxStyle(followLatestCheckBox);
-        previousButton.setToolTipText("Move the graph window backward");
-        nextButton.setToolTipText("Move the graph window forward");
         timelineSlider.setToolTipText("Move the visible graph time window");
         followLatestCheckBox.setToolTipText("Keep the graph window attached to the latest sample");
 
-        add(new JLabel("Window"));
-        add(windowComboBox);
-        add(previousButton);
-        add(new JLabel("Timeline"));
-        add(timelineSlider);
-        add(nextButton);
-        add(followLatestCheckBox);
+        addControl(new JLabel("Window"), 0, false, 0.0);
+        addControl(windowComboBox, 1, false, 0.0);
+        addControl(new JLabel("Timeline"), 2, false, 0.0);
+        addControl(timelineSlider, 3, true, 1.0);
+        addControl(followLatestCheckBox, 4, false, 0.0);
         setGraphNavigationState(GraphViewport.defaultViewport());
+    }
+
+    private void addControl(Component component, int gridX, boolean fillHorizontal, double weightX) {
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.gridx = gridX;
+        constraints.gridy = 0;
+        constraints.fill = fillHorizontal ? GridBagConstraints.HORIZONTAL : GridBagConstraints.NONE;
+        constraints.weightx = weightX;
+        constraints.insets = new Insets(0, gridX == 0 ? 0 : 12, 0, 0);
+        constraints.anchor = GridBagConstraints.CENTER;
+        add(component, constraints);
     }
 
     public void setWindowAction(Consumer<GraphDisplayRange> listener) {
@@ -77,14 +80,6 @@ public class GraphViewPanel extends JPanel {
         });
     }
 
-    public void setPreviousAction(Runnable action) {
-        previousButton.addActionListener(event -> action.run());
-    }
-
-    public void setNextAction(Runnable action) {
-        nextButton.addActionListener(event -> action.run());
-    }
-
     public void setGraphNavigationState(GraphViewport viewport) {
         updatingControls = true;
         windowComboBox.setSelectedItem(viewport.getRange());
@@ -92,8 +87,6 @@ public class GraphViewPanel extends JPanel {
         timelineSlider.setValue(viewport.getPosition());
         followLatestCheckBox.setEnabled(true);
         timelineSlider.setEnabled(!viewport.isFollowLatest());
-        previousButton.setEnabled(!viewport.isFollowLatest());
-        nextButton.setEnabled(!viewport.isFollowLatest());
         updatingControls = false;
     }
 }

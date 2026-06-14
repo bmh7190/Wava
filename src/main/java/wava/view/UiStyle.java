@@ -95,13 +95,19 @@ public final class UiStyle {
         button.setBorderPainted(false);
         button.setFocusPainted(false);
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        button.setPreferredSize(new Dimension(button.getPreferredSize().width, 30));
+        button.setPreferredSize(new Dimension(Math.max(76, button.getPreferredSize().width), 30));
     }
 
     public static void applyPrimaryButtonStyle(JButton button) {
         applyButtonStyle(button);
         button.setForeground(Color.WHITE);
         button.setBackground(PRIMARY);
+    }
+
+    public static void setButtonWidth(JButton button, int width) {
+        Dimension size = new Dimension(width, 30);
+        button.setPreferredSize(size);
+        button.setMinimumSize(size);
     }
 
     public static void applyTextFieldStyle(JTextField field) {
