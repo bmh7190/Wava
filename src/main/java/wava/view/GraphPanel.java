@@ -13,6 +13,7 @@ import javax.swing.JPanel;
 import wava.model.graph.GraphMarker;
 import wava.model.graph.GraphScale;
 import wava.model.graph.GraphScaleMode;
+import wava.model.graph.GraphTimeWindow;
 import wava.model.graph.GraphTimeline;
 import wava.model.metric.MetricSample;
 
@@ -34,6 +35,8 @@ public class GraphPanel extends JPanel {
     private final List<Double> values;
     private final List<Long> timestamps;
     private final List<GraphMarker> markers;
+    private String displayRangeLabel;
+    private GraphTimeWindow timeWindow;
 
     public GraphPanel(String title, String unit, GraphScaleMode scaleMode) {
         this.unit = unit;
@@ -41,8 +44,19 @@ public class GraphPanel extends JPanel {
         values = new ArrayList<>();
         timestamps = new ArrayList<>();
         markers = new ArrayList<>();
+        displayRangeLabel = "60s";
         setPreferredSize(new Dimension(480, PREFERRED_HEIGHT));
         UiStyle.applyPanelStyle(this, title);
+    }
+
+    public void setDisplayRangeLabel(String displayRangeLabel) {
+        this.displayRangeLabel = displayRangeLabel;
+        repaint();
+    }
+
+    public void setTimeWindow(GraphTimeWindow timeWindow) {
+        this.timeWindow = timeWindow;
+        repaint();
     }
 
     public void setValues(List<Double> nextValues) {
@@ -72,6 +86,7 @@ public class GraphPanel extends JPanel {
         values.clear();
         timestamps.clear();
         markers.clear();
+        timeWindow = null;
         repaint();
     }
 
@@ -104,6 +119,7 @@ public class GraphPanel extends JPanel {
         g2.drawRect(left, top, right - left, bottom - top);
         g2.setColor(UiStyle.MUTED_TEXT);
         drawAxisUnit(g2, left, top);
+        drawRangeLabel(g2, left, top);
         drawGridLines(g2, scale, left, top, right, bottom);
     }
 
@@ -111,6 +127,13 @@ public class GraphPanel extends JPanel {
         FontMetrics metrics = g2.getFontMetrics();
         int x = left - AXIS_LABEL_GAP - metrics.stringWidth(unit);
         g2.drawString(unit, x, top - 8);
+    }
+
+    private void drawRangeLabel(Graphics2D g2, int left, int top) {
+        if (displayRangeLabel == null || displayRangeLabel.isBlank()) {
+            return;
+        }
+        g2.drawString("Window: " + displayRangeLabel, left, top - 8);
     }
 
     private void drawGridLines(Graphics2D g2, GraphScale scale, int left, int top, int right, int bottom) {
@@ -235,6 +258,11 @@ public class GraphPanel extends JPanel {
     }
 
     private GraphTimeline createTimeline() {
+        if (timeWindow != null) {
+            return new GraphTimeline(
+                    timeWindow.getStartTimestampMillis(),
+                    timeWindow.getEndTimestampMillis());
+        }
         return new GraphTimeline(timestamps.get(0), timestamps.get(timestamps.size() - 1));
     }
 

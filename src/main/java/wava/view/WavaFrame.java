@@ -22,6 +22,7 @@ public class WavaFrame extends JFrame {
     private final ProcessPanel processPanel;
     private final LiveMetricsPanel liveMetricsPanel;
     private final ControlPanel controlPanel;
+    private final GraphViewPanel graphViewPanel;
     private final GraphPanel cpuGraphPanel;
     private final GraphPanel memoryGraphPanel;
     private final LogPanel logPanel;
@@ -32,6 +33,7 @@ public class WavaFrame extends JFrame {
         processPanel = new ProcessPanel();
         liveMetricsPanel = new LiveMetricsPanel();
         controlPanel = new ControlPanel();
+        graphViewPanel = new GraphViewPanel();
         cpuGraphPanel = new GraphPanel("CPU Usage", "%", GraphScaleMode.FIXED);
         memoryGraphPanel = new GraphPanel("Heap Memory", "MB", GraphScaleMode.AUTO);
         logPanel = new LogPanel();
@@ -107,11 +109,15 @@ public class WavaFrame extends JFrame {
     private JPanel createCenterPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 8));
         panel.setOpaque(false);
+        JPanel topPanel = new JPanel(new GridLayout(1, 2, 8, 0));
+        topPanel.setOpaque(false);
+        topPanel.add(controlPanel);
+        topPanel.add(graphViewPanel);
         JPanel graphPanel = new JPanel(new GridLayout(2, 1, 0, 8));
         graphPanel.setOpaque(false);
         graphPanel.add(cpuGraphPanel);
         graphPanel.add(memoryGraphPanel);
-        panel.add(controlPanel, BorderLayout.NORTH);
+        panel.add(topPanel, BorderLayout.NORTH);
         panel.add(graphPanel, BorderLayout.CENTER);
         return panel;
     }
@@ -135,6 +141,10 @@ public class WavaFrame extends JFrame {
 
     public ControlPanel getControlPanel() {
         return controlPanel;
+    }
+
+    public GraphViewPanel getGraphViewPanel() {
+        return graphViewPanel;
     }
 
     public GraphPanel getCpuGraphPanel() {

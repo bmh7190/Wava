@@ -6,7 +6,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.SwingUtilities;
+import wava.model.graph.GraphDisplayRange;
 import wava.model.graph.GraphMarker;
+import wava.model.graph.GraphTimeWindow;
+import wava.model.graph.GraphViewport;
 import wava.model.jfr.JfrAvailabilityStatus;
 import wava.model.jfr.JfrEventSummary;
 import wava.model.jfr.JfrRecordingStatus;
@@ -20,6 +23,7 @@ import wava.model.process.TargetProcessStatus;
 import wava.model.warmup.WarmupStabilityPoint;
 import wava.model.warmup.WarmupSummary;
 import wava.service.export.CsvExportService;
+import wava.service.graph.GraphRangeFilter;
 import wava.service.process.JavaProcessScanner;
 import wava.service.jit.JitEventFilter;
 import wava.service.jit.JitLogReader;
@@ -35,6 +39,7 @@ import wava.view.WavaFrame;
 
 public class MainController {
     private static final Path DEFAULT_EXPORT_PATH = Path.of("exports", "wava-monitoring.csv");
+    private static final int GRAPH_TIMELINE_STEP = 100;
 
     private final WavaFrame frame;
     private final JavaProcessScanner processScanner;
@@ -45,6 +50,7 @@ public class MainController {
     private final JfrAvailabilityChecker jfrAvailabilityChecker;
     private final JfrEventSummaryReader jfrEventSummaryReader;
     private final TargetJfrRecorder targetJfrRecorder;
+    private final GraphRangeFilter graphRangeFilter;
     private final WarmupAnalyzer warmupAnalyzer;
     private final WarmupStabilityAnalyzer warmupStabilityAnalyzer;
     private final JitSummaryAnalyzer jitSummaryAnalyzer;
@@ -56,6 +62,7 @@ public class MainController {
     private JfrAvailabilityStatus jfrStatus;
     private JfrRecordingStatus jfrRecordingStatus;
     private JfrEventSummary jfrEventSummary;
+    private GraphViewport graphViewport;
     private TargetProcessStatus targetProcessStatus;
     private MonitorState monitorState;
     private JavaProcessInfo selectedProcess;
@@ -70,6 +77,7 @@ public class MainController {
         jfrAvailabilityChecker = new JfrAvailabilityChecker();
         jfrEventSummaryReader = new JfrEventSummaryReader();
         targetJfrRecorder = new TargetJfrRecorder();
+        graphRangeFilter = new GraphRangeFilter();
         warmupAnalyzer = new WarmupAnalyzer();
         warmupStabilityAnalyzer = new WarmupStabilityAnalyzer();
         jitSummaryAnalyzer = new JitSummaryAnalyzer();
@@ -81,10 +89,12 @@ public class MainController {
         jfrStatus = jfrAvailabilityChecker.check();
         jfrRecordingStatus = JfrRecordingStatus.idle();
         jfrEventSummary = JfrEventSummary.empty();
+        graphViewport = GraphViewport.defaultViewport();
         targetProcessStatus = TargetProcessStatus.UNKNOWN;
         monitorState = MonitorState.IDLE;
         bindActions();
         updateState(MonitorState.IDLE);
+        updateGraphRangeLabel();
         frame.getLogPanel().appendInfo(jfrStatus.formatLogMessage());
     }
 
@@ -100,6 +110,11 @@ public class MainController {
         frame.getProcessPanel().setRefreshAction(this::refreshProcesses);
         frame.getProcessPanel().setSelectionAction(this::selectProcess);
         frame.getLogPanel().setApplySettingsAction(this::applyJitSettings);
+        frame.getGraphViewPanel().setWindowAction(this::changeGraphDisplayRange);
+        frame.getGraphViewPanel().setFollowLatestAction(this::changeFollowLatest);
+        frame.getGraphViewPanel().setTimelineAction(this::changeGraphPosition);
+        frame.getGraphViewPanel().setPreviousAction(this::showPreviousGraphWindow);
+        frame.getGraphViewPanel().setNextAction(this::showNextGraphWindow);
     }
 
     private void startMonitoring(ActionEvent event) {
@@ -262,10 +277,15 @@ public class MainController {
         WarmupStabilityPoint stabilityPoint = warmupStabilityAnalyzer.analyze(samples, jitEvents, jitEventFilter);
         JitEventSummary jitSummary = jitSummaryAnalyzer.analyze(jitEvents, jitEventFilter);
         List<GraphMarker> markers = createGraphMarkers(samples, stabilityPoint);
-        frame.getCpuGraphPanel().setSamples(samples, extractCpuValues(samples));
-        frame.getCpuGraphPanel().setMarkers(markers);
-        frame.getMemoryGraphPanel().setSamples(samples, extractMemoryValues(samples));
-        frame.getMemoryGraphPanel().setMarkers(markers);
+        GraphTimeWindow timeWindow = graphRangeFilter.createTimeWindow(samples, graphViewport);
+        List<MetricSample> visibleSamples = graphRangeFilter.filterSamples(samples, timeWindow);
+        List<GraphMarker> visibleMarkers = graphRangeFilter.filterMarkers(markers, timeWindow);
+        frame.getCpuGraphPanel().setTimeWindow(timeWindow);
+        frame.getCpuGraphPanel().setSamples(visibleSamples, extractCpuValues(visibleSamples));
+        frame.getCpuGraphPanel().setMarkers(visibleMarkers);
+        frame.getMemoryGraphPanel().setTimeWindow(timeWindow);
+        frame.getMemoryGraphPanel().setSamples(visibleSamples, extractMemoryValues(visibleSamples));
+        frame.getMemoryGraphPanel().setMarkers(visibleMarkers);
         MetricSample latestSample = samples.get(samples.size() - 1);
         frame.getLiveMetricsPanel().showMonitoringData(
                 selectedProcess,
@@ -280,6 +300,52 @@ public class MainController {
                 jfrRecordingStatus,
                 jfrEventSummary,
                 jitSummary);
+    }
+
+    private void changeGraphDisplayRange(GraphDisplayRange nextRange) {
+        graphViewport = graphViewport.withRange(nextRange);
+        applyGraphViewport("Graph window set to " + graphViewport.getRange().getLabel() + ".");
+    }
+
+    private void changeFollowLatest(boolean followLatest) {
+        graphViewport = graphViewport.withFollowLatest(followLatest);
+        applyGraphViewport("Graph follow latest " + (followLatest ? "enabled" : "disabled") + ".");
+    }
+
+    private void changeGraphPosition(int position) {
+        graphViewport = graphViewport.withPosition(position);
+        applyGraphViewport("");
+    }
+
+    private void showPreviousGraphWindow() {
+        graphViewport = graphViewport.shiftPosition(-GRAPH_TIMELINE_STEP);
+        applyGraphViewport("");
+    }
+
+    private void showNextGraphWindow() {
+        graphViewport = graphViewport.shiftPosition(GRAPH_TIMELINE_STEP);
+        applyGraphViewport("");
+    }
+
+    private void applyGraphViewport(String logMessage) {
+        frame.getGraphViewPanel().setGraphNavigationState(graphViewport);
+        updateGraphRangeLabel();
+        refreshMonitoringSummary();
+        if (!logMessage.isBlank()) {
+            frame.getLogPanel().appendInfo(logMessage);
+        }
+    }
+
+    private void updateGraphRangeLabel() {
+        frame.getCpuGraphPanel().setDisplayRangeLabel(formatGraphRangeLabel());
+        frame.getMemoryGraphPanel().setDisplayRangeLabel(formatGraphRangeLabel());
+    }
+
+    private String formatGraphRangeLabel() {
+        if (graphViewport.isFollowLatest()) {
+            return graphViewport.getRange().getLabel() + " latest";
+        }
+        return graphViewport.getRange().getLabel() + " at " + graphViewport.getPosition() / 10 + "%";
     }
 
     private void showJitEvents() {

@@ -10,11 +10,14 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
@@ -108,6 +111,26 @@ public final class UiStyle {
         field.setBorder(new CompoundBorder(
                 BorderFactory.createLineBorder(BORDER),
                 new EmptyBorder(4, 6, 4, 6)));
+    }
+
+    public static void applyComboBoxStyle(JComboBox<?> comboBox) {
+        comboBox.setFont(APP_FONT);
+        comboBox.setForeground(TEXT);
+        comboBox.setBackground(FIELD_BACKGROUND);
+        comboBox.setFocusable(false);
+    }
+
+    public static void applyCheckBoxStyle(JCheckBox checkBox) {
+        checkBox.setFont(APP_FONT);
+        checkBox.setForeground(TEXT);
+        checkBox.setOpaque(false);
+        checkBox.setFocusable(false);
+    }
+
+    public static void applySliderStyle(JSlider slider) {
+        slider.setOpaque(false);
+        slider.setFocusable(false);
+        slider.setPreferredSize(new Dimension(120, 30));
     }
 
     public static void applyTextAreaStyle(JTextArea textArea) {
