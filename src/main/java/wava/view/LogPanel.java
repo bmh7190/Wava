@@ -32,7 +32,6 @@ public class LogPanel extends JPanel {
     private final JList<JitFilterSuggestion> suggestionList;
     private final JButton applyButton;
     private final JButton browseButton;
-    private final JButton useSuggestionButton;
     private final JPanel logPathPanel;
     private final JPanel filterPanel;
     private String currentTargetFilterText;
@@ -57,17 +56,19 @@ public class LogPanel extends JPanel {
         UiStyle.applyTextFieldStyle(filterField);
         applyButton = new JButton("Apply Filter");
         browseButton = new JButton("Browse");
-        useSuggestionButton = new JButton("Use Suggestion");
         currentTargetFilterText = "";
         UiStyle.applyPrimaryButtonStyle(applyButton);
         UiStyle.applyButtonStyle(browseButton);
-        UiStyle.applyButtonStyle(useSuggestionButton);
         UiStyle.applyListStyle(suggestionList);
         suggestionList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         browseButton.addActionListener(event -> chooseLogFile());
         filterPresetComboBox.addActionListener(event -> applyFilterPreset());
         filterField.getDocument().addDocumentListener(new FilterTextListener());
-        useSuggestionButton.addActionListener(event -> useSelectedSuggestion());
+        suggestionList.addListSelectionListener(event -> {
+            if (!event.getValueIsAdjusting()) {
+                useSelectedSuggestion();
+            }
+        });
         suggestionList.addMouseListener(new SuggestionMouseListener());
 
         JButton clearButton = new JButton("Clear Log");
@@ -174,14 +175,14 @@ public class LogPanel extends JPanel {
         JPanel panel = new JPanel(new BorderLayout());
         UiStyle.applyPanelStyle(panel, "JIT Filter");
 
-        JPanel formPanel = new JPanel(new GridLayout(3, 1, 0, 4));
+        JPanel formPanel = new JPanel(new GridLayout(2, 1, 0, 4));
         formPanel.setOpaque(false);
         formPanel.add(createPresetPanel());
         formPanel.add(createFilterPanel());
-        formPanel.add(applyButton);
 
         panel.add(formPanel, BorderLayout.NORTH);
         panel.add(createSuggestionPanel(), BorderLayout.CENTER);
+        panel.add(applyButton, BorderLayout.SOUTH);
         return panel;
     }
 
@@ -217,7 +218,6 @@ public class LogPanel extends JPanel {
         JScrollPane scrollPane = new JScrollPane(suggestionList);
         UiStyle.applyScrollPaneStyle(scrollPane);
         panel.add(scrollPane, BorderLayout.CENTER);
-        panel.add(useSuggestionButton, BorderLayout.SOUTH);
         return panel;
     }
 
