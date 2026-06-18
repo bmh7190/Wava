@@ -8,6 +8,7 @@ import wava.model.jit.JitEvent;
 import wava.model.jit.JitEventSummary;
 import wava.model.jit.JitLogStatus;
 import wava.service.jit.JitEventFilter;
+import wava.service.jit.JitFilterSuggestionBuilder;
 import wava.service.jit.JitLogPathResolver;
 import wava.service.jit.JitLogReader;
 import wava.service.jit.JitSummaryAnalyzer;
@@ -15,26 +16,33 @@ import wava.view.WavaFrame;
 import wava.model.process.JavaProcessInfo;
 
 public class JitController {
+    private static final int MAX_FILTER_SUGGESTIONS = 8;
+
     private final WavaFrame frame;
     private final JitLogReader jitLogReader;
     private final JitLogPathResolver jitLogPathResolver;
+    private final JitFilterSuggestionBuilder jitFilterSuggestionBuilder;
     private final JitSummaryAnalyzer jitSummaryAnalyzer;
     private final List<JitEvent> jitEvents;
     private JitEventFilter jitEventFilter;
     private JitLogStatus jitLogStatus;
     private String jitFilterText;
     private String lastJitLogStatusKey;
+    private JavaProcessInfo selectedProcess;
 
     public JitController(WavaFrame frame) {
         this.frame = frame;
         jitLogReader = new JitLogReader();
         jitLogPathResolver = new JitLogPathResolver();
+        jitFilterSuggestionBuilder = new JitFilterSuggestionBuilder();
         jitSummaryAnalyzer = new JitSummaryAnalyzer();
         jitEvents = new ArrayList<>();
         jitEventFilter = new JitEventFilter("");
         jitLogStatus = jitLogReader.inspectStatus();
         jitFilterText = "";
         lastJitLogStatusKey = "";
+        selectedProcess = null;
+        updateFilterSuggestions();
     }
 
     public void resetForMonitoring() {
@@ -47,10 +55,13 @@ public class JitController {
     public void resetAll() {
         jitLogReader.reset();
         jitEvents.clear();
+        updateFilterSuggestions();
     }
 
     public void applyProcessLogSuggestion(JavaProcessInfo process) {
+        selectedProcess = process;
         frame.getLogPanel().setCurrentTargetFilter(createCurrentTargetFilter(process));
+        updateFilterSuggestions();
         jitLogPathResolver.resolve(process).ifPresent(path -> {
             frame.getLogPanel().setLogPath(path);
             jitLogReader.setLogPath(path);
@@ -58,6 +69,7 @@ public class JitController {
             jitEvents.clear();
             frame.getLogPanel().appendInfo("Auto-selected JIT log " + path + " for " + process.getDisplayName() + ".");
             updateJitLogStatus(true);
+            updateFilterSuggestions();
         });
     }
 
@@ -74,6 +86,9 @@ public class JitController {
                     frame.getLogPanel().appendJitEvent(event);
                 }
             }
+            if (!events.isEmpty()) {
+                updateFilterSuggestions();
+            }
         } catch (IOException exception) {
             setJitLogStatus(JitLogStatus.readError(jitLogReader.getLogPath(), exception.getMessage()), true);
             frame.getLogPanel().appendInfo("Failed to read JIT log: " + exception.getMessage());
@@ -85,6 +100,7 @@ public class JitController {
         jitEvents.clear();
         frame.getLogPanel().appendInfo("JIT settings applied. Log: " + jitLogReader.getLogPath());
         updateJitLogStatus(true);
+        updateFilterSuggestions();
     }
 
     public JitEventSummary createSummary() {
@@ -119,6 +135,13 @@ public class JitController {
         jitLogReader.setLogPath(frame.getLogPanel().getLogPath());
         jitFilterText = frame.getLogPanel().getFilterText().trim();
         jitEventFilter = new JitEventFilter(jitFilterText);
+    }
+
+    private void updateFilterSuggestions() {
+        frame.getLogPanel().setFilterSuggestions(jitFilterSuggestionBuilder.build(
+                selectedProcess,
+                jitEvents,
+                MAX_FILTER_SUGGESTIONS));
     }
 
     private String createCurrentTargetFilter(JavaProcessInfo process) {

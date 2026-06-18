@@ -1,11 +1,13 @@
 package wava.view;
 
 import wava.model.jit.JitFilterPreset;
+import wava.model.jit.JitFilterSuggestion;
 
 public class LogPanelTest {
     public static void main(String[] args) {
         createLogPanel();
         updateCurrentTargetFilterWhenSelected();
+        applySelectedSuggestionToFilterText();
     }
 
     private static void createLogPanel() {
@@ -22,6 +24,18 @@ public class LogPanelTest {
 
         assertEquals(JitFilterPreset.CURRENT_TARGET, panel.getFilterPreset(), "preset");
         assertEquals("CpuWarmupTarget", panel.getFilterText(), "filter text");
+    }
+
+    private static void applySelectedSuggestionToFilterText() {
+        LogPanel panel = new LogPanel();
+
+        panel.setFilterSuggestions(java.util.List.of(
+                new JitFilterSuggestion("[Top] sample.Target.run", "sample.Target::run")));
+        panel.selectFilterSuggestion(0);
+        panel.useSelectedFilterSuggestion();
+
+        assertEquals(JitFilterPreset.CUSTOM, panel.getFilterPreset(), "preset");
+        assertEquals("sample.Target::run", panel.getFilterText(), "filter text");
     }
 
     private static void assertTrue(boolean condition, String label) {

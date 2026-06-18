@@ -3,17 +3,24 @@ package wava.view;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.nio.file.Path;
+import java.util.List;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.ListSelectionModel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentListener;
 import wava.model.jit.JitEvent;
+import wava.model.jit.JitFilterSuggestion;
 import wava.model.jit.JitFilterPreset;
 
 public class LogPanel extends JPanel {
@@ -21,8 +28,11 @@ public class LogPanel extends JPanel {
     private final JTextField logPathField;
     private final JComboBox<JitFilterPreset> filterPresetComboBox;
     private final JTextField filterField;
+    private final DefaultListModel<JitFilterSuggestion> suggestionListModel;
+    private final JList<JitFilterSuggestion> suggestionList;
     private final JButton applyButton;
     private final JButton browseButton;
+    private final JButton useSuggestionButton;
     private final JPanel settingsPanel;
     private String currentTargetFilterText;
 
@@ -39,17 +49,25 @@ public class LogPanel extends JPanel {
         logPathField = new JTextField("logs/jit.log");
         filterPresetComboBox = new JComboBox<>(JitFilterPreset.values());
         filterField = new JTextField();
+        suggestionListModel = new DefaultListModel<>();
+        suggestionList = new JList<>(suggestionListModel);
         UiStyle.applyTextFieldStyle(logPathField);
         UiStyle.applyComboBoxStyle(filterPresetComboBox);
         UiStyle.applyTextFieldStyle(filterField);
         applyButton = new JButton("Apply JIT Settings");
         browseButton = new JButton("Browse");
+        useSuggestionButton = new JButton("Use Suggestion");
         currentTargetFilterText = "";
         UiStyle.applyPrimaryButtonStyle(applyButton);
         UiStyle.applyButtonStyle(browseButton);
+        UiStyle.applyButtonStyle(useSuggestionButton);
+        UiStyle.applyListStyle(suggestionList);
+        suggestionList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         browseButton.addActionListener(event -> chooseLogFile());
         filterPresetComboBox.addActionListener(event -> applyFilterPreset());
         filterField.getDocument().addDocumentListener(new FilterTextListener());
+        useSuggestionButton.addActionListener(event -> useSelectedSuggestion());
+        suggestionList.addMouseListener(new SuggestionMouseListener());
 
         JButton clearButton = new JButton("Clear Log");
         UiStyle.applyButtonStyle(clearButton);
@@ -102,6 +120,25 @@ public class LogPanel extends JPanel {
         filterPresetComboBox.setSelectedItem(preset);
     }
 
+    public void setFilterSuggestions(List<JitFilterSuggestion> suggestions) {
+        suggestionListModel.clear();
+        for (JitFilterSuggestion suggestion : suggestions) {
+            suggestionListModel.addElement(suggestion);
+        }
+    }
+
+    public int getFilterSuggestionCount() {
+        return suggestionListModel.size();
+    }
+
+    public void selectFilterSuggestion(int index) {
+        suggestionList.setSelectedIndex(index);
+    }
+
+    public void useSelectedFilterSuggestion() {
+        useSelectedSuggestion();
+    }
+
     public JitFilterPreset getFilterPreset() {
         JitFilterPreset preset = (JitFilterPreset) filterPresetComboBox.getSelectedItem();
         return preset == null ? JitFilterPreset.CUSTOM : preset;
@@ -127,6 +164,7 @@ public class LogPanel extends JPanel {
         formPanel.add(applyButton);
 
         panel.add(formPanel, BorderLayout.NORTH);
+        panel.add(createSuggestionPanel(), BorderLayout.CENTER);
         return panel;
     }
 
@@ -155,6 +193,17 @@ public class LogPanel extends JPanel {
         return panel;
     }
 
+    private JPanel createSuggestionPanel() {
+        JPanel panel = new JPanel(new BorderLayout(0, 4));
+        panel.setOpaque(false);
+        panel.add(new JLabel("Suggestions"), BorderLayout.NORTH);
+        JScrollPane scrollPane = new JScrollPane(suggestionList);
+        UiStyle.applyScrollPaneStyle(scrollPane);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        panel.add(useSuggestionButton, BorderLayout.SOUTH);
+        return panel;
+    }
+
     private void chooseLogFile() {
         JFileChooser chooser = new JFileChooser();
         chooser.setSelectedFile(getLogPath().toFile());
@@ -180,6 +229,24 @@ public class LogPanel extends JPanel {
         filterField.putClientProperty("updatingFilterPreset", Boolean.TRUE);
         filterField.setText(filterText);
         filterField.putClientProperty("updatingFilterPreset", Boolean.FALSE);
+    }
+
+    private void useSelectedSuggestion() {
+        JitFilterSuggestion suggestion = suggestionList.getSelectedValue();
+        if (suggestion == null) {
+            return;
+        }
+        filterPresetComboBox.setSelectedItem(JitFilterPreset.CUSTOM);
+        setFilterText(suggestion.getFilterText());
+    }
+
+    private class SuggestionMouseListener extends MouseAdapter {
+        @Override
+        public void mouseClicked(MouseEvent event) {
+            if (event.getClickCount() >= 2) {
+                useSelectedSuggestion();
+            }
+        }
     }
 
     private class FilterTextListener implements DocumentListener {
