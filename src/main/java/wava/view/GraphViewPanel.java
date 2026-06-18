@@ -21,7 +21,7 @@ public class GraphViewPanel extends JPanel {
 
     public GraphViewPanel() {
         super(new GridBagLayout());
-        UiStyle.applyPanelStyle(this, "Graph View");
+        UiStyle.applyCompactPanelStyle(this, "Graph View");
 
         windowComboBox = new JComboBox<>(GraphDisplayRange.values());
         timelineSlider = new JSlider(GraphViewport.MIN_POSITION, GraphViewport.MAX_POSITION, GraphViewport.MAX_POSITION);

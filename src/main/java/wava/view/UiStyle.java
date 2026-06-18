@@ -77,6 +77,12 @@ public final class UiStyle {
         component.setFont(APP_FONT);
     }
 
+    public static void applyCompactPanelStyle(JComponent component, String title) {
+        component.setBackground(PANEL_BACKGROUND);
+        component.setBorder(createCompactPanelBorder(title));
+        component.setFont(APP_FONT);
+    }
+
     public static Border createPanelBorder(String title) {
         TitledBorder titledBorder = BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(BORDER),
@@ -84,6 +90,15 @@ public final class UiStyle {
         titledBorder.setTitleColor(TEXT);
         titledBorder.setTitleFont(APP_FONT_BOLD);
         return new CompoundBorder(titledBorder, new EmptyBorder(10, 10, 10, 10));
+    }
+
+    public static Border createCompactPanelBorder(String title) {
+        TitledBorder titledBorder = BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(BORDER),
+                title);
+        titledBorder.setTitleColor(TEXT);
+        titledBorder.setTitleFont(APP_FONT_BOLD);
+        return new CompoundBorder(titledBorder, new EmptyBorder(4, 10, 6, 10));
     }
 
     public static void applyButtonStyle(JButton button) {
@@ -106,6 +121,12 @@ public final class UiStyle {
 
     public static void setButtonWidth(JButton button, int width) {
         Dimension size = new Dimension(width, 30);
+        button.setPreferredSize(size);
+        button.setMinimumSize(size);
+    }
+
+    public static void setCompactButtonWidth(JButton button, int width) {
+        Dimension size = new Dimension(width, 26);
         button.setPreferredSize(size);
         button.setMinimumSize(size);
     }

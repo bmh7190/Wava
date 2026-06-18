@@ -15,8 +15,8 @@ public class ControlPanel extends JPanel {
     private final JLabel stateLabel;
 
     public ControlPanel() {
-        super(new FlowLayout(FlowLayout.LEFT, 8, 8));
-        UiStyle.applyPanelStyle(this, "Monitoring Control");
+        super(new FlowLayout(FlowLayout.LEFT, 8, 2));
+        UiStyle.applyCompactPanelStyle(this, "Monitoring Control");
 
         startButton = new JButton("Start");
         stopButton = new JButton("Stop");
@@ -27,10 +27,10 @@ public class ControlPanel extends JPanel {
         UiStyle.applyButtonStyle(stopButton);
         UiStyle.applyButtonStyle(resetButton);
         UiStyle.applyButtonStyle(exportButton);
-        UiStyle.setButtonWidth(startButton, 88);
-        UiStyle.setButtonWidth(stopButton, 88);
-        UiStyle.setButtonWidth(resetButton, 88);
-        UiStyle.setButtonWidth(exportButton, 124);
+        UiStyle.setCompactButtonWidth(startButton, 88);
+        UiStyle.setCompactButtonWidth(stopButton, 88);
+        UiStyle.setCompactButtonWidth(resetButton, 88);
+        UiStyle.setCompactButtonWidth(exportButton, 124);
 
         add(startButton);
         add(stopButton);

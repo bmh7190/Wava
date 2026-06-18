@@ -107,7 +107,7 @@ public class WavaFrame extends JFrame {
     }
 
     private JPanel createCenterPanel() {
-        JPanel panel = new JPanel(new BorderLayout(0, 8));
+        JPanel panel = new JPanel(new BorderLayout(0, 6));
         panel.setOpaque(false);
         JPanel topPanel = new JPanel(new GridLayout(1, 2, 8, 0));
         topPanel.setOpaque(false);
