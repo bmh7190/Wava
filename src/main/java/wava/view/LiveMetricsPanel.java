@@ -3,6 +3,7 @@ package wava.view;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -21,7 +22,8 @@ public class LiveMetricsPanel extends JPanel {
 
     private final JLabel cpuLabel;
     private final JLabel heapLabel;
-    private final JLabel gcLabel;
+    private final JLabel gcCountLabel;
+    private final JLabel gcTimeLabel;
     private final JLabel warmupCpuLabel;
     private final JLabel warmupHeapLabel;
     private final JLabel stabilityLabel;
@@ -30,9 +32,10 @@ public class LiveMetricsPanel extends JPanel {
         super(new BorderLayout(0, 6));
         UiStyle.applyPanelStyle(this, "Live Metrics");
 
-        cpuLabel = createValueLabel();
-        heapLabel = createValueLabel();
-        gcLabel = createValueLabel();
+        cpuLabel = createTileValueLabel();
+        heapLabel = createTileValueLabel();
+        gcCountLabel = createTileValueLabel();
+        gcTimeLabel = createTileValueLabel();
         warmupCpuLabel = createValueLabel();
         warmupHeapLabel = createValueLabel();
         stabilityLabel = createValueLabel();
@@ -55,7 +58,8 @@ public class LiveMetricsPanel extends JPanel {
         showSelectedProcess(process);
         cpuLabel.setText(formatValue(latestSample.getCpuUsagePercent()) + " %");
         heapLabel.setText(formatHeapValue(latestSample));
-        gcLabel.setText(formatGcValue(latestSample));
+        gcCountLabel.setText(formatGcCountValue(latestSample));
+        gcTimeLabel.setText(formatGcTimeValue(latestSample));
         updateWarmup(summary, stabilityPoint);
     }
 
@@ -67,16 +71,47 @@ public class LiveMetricsPanel extends JPanel {
         JPanel panel = new JPanel();
         panel.setOpaque(false);
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.add(createSectionPanel("Latest",
+        panel.add(createMetricTileSectionPanel("Latest",
                 new Field("CPU", cpuLabel),
                 new Field("Heap", heapLabel),
-                new Field("GC", gcLabel)));
+                new Field("GC Count", gcCountLabel),
+                new Field("GC Time", gcTimeLabel)));
         panel.add(Box.createVerticalStrut(SECTION_GAP));
         panel.add(createSectionPanel("Warm-up",
                 new Field("CPU", warmupCpuLabel),
                 new Field("Heap", warmupHeapLabel),
                 new Field("Stable", stabilityLabel)));
         return panel;
+    }
+
+    private JPanel createMetricTileSectionPanel(String title, Field... fields) {
+        JPanel panel = new JPanel(new BorderLayout(0, 6));
+        panel.setBackground(UiStyle.PANEL_BACKGROUND);
+        panel.setBorder(new CompoundBorder(
+                BorderFactory.createLineBorder(UiStyle.BORDER),
+                new EmptyBorder(6, 8, 8, 8)));
+
+        panel.add(createSectionTitleLabel(title), BorderLayout.NORTH);
+
+        JPanel tileGrid = new JPanel(new GridLayout(2, 2, 6, 6));
+        tileGrid.setOpaque(false);
+        for (Field field : fields) {
+            tileGrid.add(createMetricTile(field.name, field.valueLabel));
+        }
+        panel.add(tileGrid, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel createMetricTile(String title, JLabel valueLabel) {
+        JPanel tile = new JPanel(new BorderLayout(0, 4));
+        tile.setBackground(UiStyle.SURFACE);
+        tile.setBorder(new CompoundBorder(
+                BorderFactory.createLineBorder(UiStyle.BORDER),
+                new EmptyBorder(6, 8, 6, 8)));
+
+        tile.add(createNameLabel(title), BorderLayout.NORTH);
+        tile.add(valueLabel, BorderLayout.CENTER);
+        return tile;
     }
 
     private JPanel createSectionPanel(String title, Field... fields) {
@@ -161,7 +196,8 @@ public class LiveMetricsPanel extends JPanel {
     private void clearValues() {
         cpuLabel.setText("-");
         heapLabel.setText("-");
-        gcLabel.setText("-");
+        gcCountLabel.setText("-");
+        gcTimeLabel.setText("-");
         warmupCpuLabel.setText("-");
         warmupHeapLabel.setText("-");
         stabilityLabel.setText("-");
@@ -179,6 +215,13 @@ public class LiveMetricsPanel extends JPanel {
         JLabel label = new JLabel(text);
         label.setForeground(UiStyle.MUTED_TEXT);
         label.setFont(UiStyle.APP_FONT);
+        return label;
+    }
+
+    private JLabel createTileValueLabel() {
+        JLabel label = new JLabel("-");
+        label.setForeground(UiStyle.TEXT);
+        label.setFont(UiStyle.APP_FONT_BOLD.deriveFont(13f));
         return label;
     }
 
@@ -200,12 +243,18 @@ public class LiveMetricsPanel extends JPanel {
         return formatValue(sample.getHeapUsedMb()) + " MB";
     }
 
-    private String formatGcValue(MetricSample sample) {
+    private String formatGcCountValue(MetricSample sample) {
         if (!sample.isGcAvailable()) {
             return "Unavailable";
         }
-        return "+" + sample.getGcCountDelta()
-                + " collections, +" + sample.getGcTimeDeltaMillis() + " ms";
+        return "+" + sample.getGcCountDelta();
+    }
+
+    private String formatGcTimeValue(MetricSample sample) {
+        if (!sample.isGcAvailable()) {
+            return "Unavailable";
+        }
+        return "+" + sample.getGcTimeDeltaMillis() + " ms";
     }
 
     private String formatSignedValue(double value) {
