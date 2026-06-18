@@ -18,6 +18,8 @@ public class WavaFrame extends JFrame {
     private static final int LEFT_PANEL_WIDTH = 260;
     private static final int BOTTOM_PANEL_HEIGHT = 180;
     private static final int LIVE_METRICS_PANEL_HEIGHT = 330;
+    private static final double GRAPH_SPLIT_RESIZE_WEIGHT = 0.5;
+    private static final double RIGHT_SPLIT_RESIZE_WEIGHT = 0.72;
 
     private final ProcessPanel processPanel;
     private final LiveMetricsPanel liveMetricsPanel;
@@ -98,12 +100,13 @@ public class WavaFrame extends JFrame {
         return panel;
     }
 
-    private JPanel createRightPanel() {
-        JPanel panel = new JPanel(new BorderLayout(0, 12));
-        panel.setOpaque(false);
-        panel.add(createCenterPanel(), BorderLayout.CENTER);
-        panel.add(createBottomPanel(), BorderLayout.SOUTH);
-        return panel;
+    private JSplitPane createRightPanel() {
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, createCenterPanel(), createBottomPanel());
+        splitPane.setBorder(null);
+        splitPane.setDividerSize(8);
+        splitPane.setResizeWeight(RIGHT_SPLIT_RESIZE_WEIGHT);
+        splitPane.setDividerLocation(DEFAULT_HEIGHT - BOTTOM_PANEL_HEIGHT - 140);
+        return splitPane;
     }
 
     private JPanel createCenterPanel() {
@@ -113,19 +116,25 @@ public class WavaFrame extends JFrame {
         topPanel.setOpaque(false);
         topPanel.add(controlPanel);
         topPanel.add(graphViewPanel);
-        JPanel graphPanel = new JPanel(new GridLayout(2, 1, 0, 8));
-        graphPanel.setOpaque(false);
-        graphPanel.add(cpuGraphPanel);
-        graphPanel.add(memoryGraphPanel);
+        JSplitPane graphPanel = createGraphSplitPane();
         panel.add(topPanel, BorderLayout.NORTH);
         panel.add(graphPanel, BorderLayout.CENTER);
         return panel;
+    }
+
+    private JSplitPane createGraphSplitPane() {
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, cpuGraphPanel, memoryGraphPanel);
+        splitPane.setBorder(null);
+        splitPane.setDividerSize(8);
+        splitPane.setResizeWeight(GRAPH_SPLIT_RESIZE_WEIGHT);
+        return splitPane;
     }
 
     private JPanel createBottomPanel() {
         JPanel panel = new JPanel(new GridLayout(1, 2, 8, 0));
         panel.setOpaque(false);
         panel.setPreferredSize(new Dimension(0, BOTTOM_PANEL_HEIGHT));
+        panel.setMinimumSize(new Dimension(0, 120));
         panel.add(logPanel);
         panel.add(summaryPanel);
         return panel;
