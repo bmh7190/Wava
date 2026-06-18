@@ -165,8 +165,8 @@ public class MainController {
         targetProcessStatus = processStatusChecker.check(process);
         frame.getSummaryPanel().showSelectedProcess(process);
         frame.getLiveMetricsPanel().showSelectedProcess(process);
+        jitController.applyProcessLogSuggestion(process);
         if (process != null) {
-            jitController.applyProcessLogSuggestion(process);
             frame.getLogPanel().appendInfo("Selected process " + process.formatListItem() + ".");
         }
         if (shouldRestartMonitoring) {

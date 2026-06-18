@@ -50,6 +50,7 @@ public class JitController {
     }
 
     public void applyProcessLogSuggestion(JavaProcessInfo process) {
+        frame.getLogPanel().setCurrentTargetFilter(createCurrentTargetFilter(process));
         jitLogPathResolver.resolve(process).ifPresent(path -> {
             frame.getLogPanel().setLogPath(path);
             jitLogReader.setLogPath(path);
@@ -118,6 +119,18 @@ public class JitController {
         jitLogReader.setLogPath(frame.getLogPanel().getLogPath());
         jitFilterText = frame.getLogPanel().getFilterText().trim();
         jitEventFilter = new JitEventFilter(jitFilterText);
+    }
+
+    private String createCurrentTargetFilter(JavaProcessInfo process) {
+        if (process == null) {
+            return "";
+        }
+        String displayName = process.getDisplayName();
+        int packageSeparator = displayName.lastIndexOf('.');
+        if (packageSeparator >= 0 && packageSeparator + 1 < displayName.length()) {
+            return displayName.substring(packageSeparator + 1);
+        }
+        return displayName;
     }
 
     private void setJitLogStatus(JitLogStatus nextStatus, boolean forceLog) {
