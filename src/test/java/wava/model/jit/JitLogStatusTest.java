@@ -6,6 +6,7 @@ public class JitLogStatusTest {
     public static void main(String[] args) {
         createMissingStatus();
         createReadyStatus();
+        readyStatusKeyIgnoresChangingFileSize();
         createReadErrorStatus();
     }
 
@@ -27,6 +28,16 @@ public class JitLogStatusTest {
         assertEquals("Ready", status.getStateLabel(), "state");
         assertTrue(status.isReadable(), "readable");
         assertTrue(status.getDetail().contains("120"), "detail");
+    }
+
+    private static void readyStatusKeyIgnoresChangingFileSize() {
+        Path path = Path.of("logs", "jit.log");
+
+        JitLogStatus firstStatus = JitLogStatus.ready(path, 120L);
+        JitLogStatus nextStatus = JitLogStatus.ready(path, 240L);
+
+        assertEquals(firstStatus.getStatusKey(), nextStatus.getStatusKey(), "ready key");
+        assertTrue(!firstStatus.getDetail().equals(nextStatus.getDetail()), "detail changed");
     }
 
     private static void createReadErrorStatus() {

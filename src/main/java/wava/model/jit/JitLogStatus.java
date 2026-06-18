@@ -51,6 +51,9 @@ public class JitLogStatus {
     }
 
     public String getStatusKey() {
+        if ("Ready".equals(stateLabel)) {
+            return logPath + "|" + stateLabel + "|" + readable;
+        }
         return logPath + "|" + stateLabel + "|" + detail;
     }
 
