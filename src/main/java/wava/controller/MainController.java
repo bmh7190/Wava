@@ -70,6 +70,10 @@ public class MainController {
     }
 
     private void startMonitoring(ActionEvent event) {
+        startSelectedProcessMonitoring("Monitoring started");
+    }
+
+    private void startSelectedProcessMonitoring(String logPrefix) {
         if (selectedProcess == null) {
             frame.getLogPanel().appendInfo("Select a Java process before starting monitoring.");
             frame.getSummaryPanel().showMessage("No process selected.");
@@ -86,7 +90,7 @@ public class MainController {
         jitController.resetForMonitoring();
         jfrController.startRecording(selectedProcess, frame.getLogPanel()::appendInfo);
         monitorService.start(selectedProcess, this::showMetricSamples);
-        frame.getLogPanel().appendInfo("Monitoring started for " + selectedProcess.formatListItem() + ".");
+        frame.getLogPanel().appendInfo(logPrefix + " for " + selectedProcess.formatListItem() + ".");
         frame.getLogPanel().appendInfo("Reading JIT log from " + jitController.getLogPath() + ".");
     }
 
@@ -99,15 +103,9 @@ public class MainController {
     }
 
     private void resetMonitoring(ActionEvent event) {
-        monitorService.reset();
         jfrController.stopRecording(selectedProcess, frame.getLogPanel()::appendInfo);
-        jitController.resetAll();
-        jfrController.reset();
-        targetProcessStatus = TargetProcessStatus.UNKNOWN;
+        clearMonitoringData(true);
         updateState(MonitorState.IDLE);
-        frame.getLogPanel().clear();
-        frame.getLogPanel().appendInfo("Monitoring data reset.");
-        graphController.clearData();
         frame.getSummaryPanel().showSelectedProcess(selectedProcess);
         frame.getLiveMetricsPanel().showSelectedProcess(selectedProcess);
     }
@@ -155,6 +153,14 @@ public class MainController {
     }
 
     private void selectProcess(JavaProcessInfo process) {
+        boolean shouldRestartMonitoring = monitorState == MonitorState.RUNNING;
+        JavaProcessInfo previousProcess = selectedProcess;
+        if (shouldRestartMonitoring) {
+            monitorService.stop();
+            jfrController.stopRecording(previousProcess, frame.getLogPanel()::appendInfo);
+            clearMonitoringData(false);
+        }
+
         selectedProcess = process;
         targetProcessStatus = processStatusChecker.check(process);
         frame.getSummaryPanel().showSelectedProcess(process);
@@ -162,6 +168,23 @@ public class MainController {
         if (process != null) {
             jitController.applyProcessLogSuggestion(process);
             frame.getLogPanel().appendInfo("Selected process " + process.formatListItem() + ".");
+        }
+        if (shouldRestartMonitoring) {
+            startSelectedProcessMonitoring("Monitoring restarted");
+        }
+    }
+
+    private void clearMonitoringData(boolean clearLog) {
+        monitorService.reset();
+        jitController.resetAll();
+        jfrController.reset();
+        targetProcessStatus = TargetProcessStatus.UNKNOWN;
+        graphController.clearData();
+        if (clearLog) {
+            frame.getLogPanel().clear();
+            frame.getLogPanel().appendInfo("Monitoring data reset.");
+        } else {
+            frame.getLogPanel().appendInfo("Monitoring data reset for target switch.");
         }
     }
 
