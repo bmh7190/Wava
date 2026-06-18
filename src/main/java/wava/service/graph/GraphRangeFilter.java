@@ -75,14 +75,14 @@ public class GraphRangeFilter {
         long firstTimestamp = samples.get(0).getTimestampMillis();
         long latestTimestamp = samples.get(samples.size() - 1).getTimestampMillis();
         long rangeDuration = viewport.getRange().getDurationMillis();
+        if (latestTimestamp - firstTimestamp <= rangeDuration) {
+            return new GraphTimeWindow(firstTimestamp, firstTimestamp + rangeDuration);
+        }
         if (viewport.isFollowLatest()) {
             return new GraphTimeWindow(latestTimestamp - rangeDuration, latestTimestamp);
         }
 
         long maxStartTimestamp = latestTimestamp - rangeDuration;
-        if (maxStartTimestamp <= firstTimestamp) {
-            return new GraphTimeWindow(latestTimestamp - rangeDuration, latestTimestamp);
-        }
         long movableDuration = maxStartTimestamp - firstTimestamp;
         long startTimestamp = firstTimestamp
                 + Math.round(movableDuration * (viewport.getPosition() / (double) GraphViewport.MAX_POSITION));

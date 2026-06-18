@@ -11,6 +11,7 @@ public class GraphRangeFilterTest {
     public static void main(String[] args) {
         keepOnlySamplesInRecentRange();
         keepSamplesInManualViewportRange();
+        startShortWindowAtFirstSample();
         createFixedLatestTimeWindow();
         filterMarkersToTimeWindow();
     }
@@ -55,6 +56,16 @@ public class GraphRangeFilterTest {
 
         assertEquals(100_000L, timeWindow.getStartTimestampMillis(), "window start");
         assertEquals(160_000L, timeWindow.getEndTimestampMillis(), "window end");
+    }
+
+    private static void startShortWindowAtFirstSample() {
+        GraphRangeFilter filter = new GraphRangeFilter();
+        List<MetricSample> samples = List.of(sample(10_000L), sample(25_000L));
+
+        GraphTimeWindow timeWindow = filter.createTimeWindow(samples, GraphViewport.defaultViewport());
+
+        assertEquals(10_000L, timeWindow.getStartTimestampMillis(), "short window start");
+        assertEquals(70_000L, timeWindow.getEndTimestampMillis(), "short window end");
     }
 
     private static void filterMarkersToTimeWindow() {
