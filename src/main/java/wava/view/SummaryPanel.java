@@ -24,32 +24,19 @@ import wava.model.monitor.MonitorState;
 import wava.model.process.JavaProcessInfo;
 
 public class SummaryPanel extends JPanel {
-    private static final int SECTION_GAP = 8;
     private static final int MAX_TOP_METHODS = 3;
 
-    private final JLabel stateLabel;
-    private final JLabel noticeLabel;
-    private final JLabel jitLogLabel;
-    private final JLabel jitEventsLabel;
-    private final JLabel jitTopMethodsLabel;
-    private final JLabel jfrAvailabilityLabel;
-    private final JLabel jfrRecordingLabel;
-    private final JLabel jfrEventsLabel;
-    private final JLabel jfrFileLabel;
+    private final JLabel jitStatusLabel;
+    private final JLabel jfrStatusLabel;
+    private final JLabel eventCountsLabel;
 
     public SummaryPanel() {
         super(new BorderLayout(0, 6));
         UiStyle.applyPanelStyle(this, "Summary");
 
-        stateLabel = createValueLabel();
-        noticeLabel = createNoticeLabel();
-        jitLogLabel = createValueLabel();
-        jitEventsLabel = createValueLabel();
-        jitTopMethodsLabel = createValueLabel();
-        jfrAvailabilityLabel = createValueLabel();
-        jfrRecordingLabel = createValueLabel();
-        jfrEventsLabel = createValueLabel();
-        jfrFileLabel = createValueLabel();
+        jitStatusLabel = createValueLabel();
+        jfrStatusLabel = createValueLabel();
+        eventCountsLabel = createValueLabel();
 
         add(createScrollPane(), BorderLayout.CENTER);
         resetSummaryValues();
@@ -57,11 +44,9 @@ public class SummaryPanel extends JPanel {
     }
 
     public void showState(MonitorState state) {
-        stateLabel.setText(state.getLabel());
     }
 
     public void showMessage(String message) {
-        noticeLabel.setText("");
     }
 
     public void showSelectedProcess(JavaProcessInfo process) {
@@ -88,32 +73,18 @@ public class SummaryPanel extends JPanel {
 
         updateJit(jitLogStatus, jitFilterText, jitSummary);
         updateJfr(jfrStatus, jfrRecordingStatus, jfrEventSummary);
-    }
-
-    private JPanel createHeaderPanel() {
-        JPanel panel = new JPanel(new BorderLayout(6, 0));
-        panel.setOpaque(false);
-        stateLabel.setForeground(UiStyle.MUTED_TEXT);
-        noticeLabel.setForeground(UiStyle.MUTED_TEXT);
-        panel.add(stateLabel, BorderLayout.WEST);
-        panel.add(noticeLabel, BorderLayout.EAST);
-        return panel;
+        updateEventCounts(jitSummary, jfrEventSummary);
     }
 
     private JScrollPane createScrollPane() {
         JPanel contentPanel = new JPanel();
         contentPanel.setOpaque(false);
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-        contentPanel.add(createSectionPanel("JIT",
-                new Field("Log", jitLogLabel),
-                new Field("Events", jitEventsLabel),
-                new Field("Top", jitTopMethodsLabel)));
-        contentPanel.add(Box.createVerticalStrut(SECTION_GAP));
-        contentPanel.add(createSectionPanel("JFR",
-                new Field("Runtime", jfrAvailabilityLabel),
-                new Field("Recording", jfrRecordingLabel),
-                new Field("Events", jfrEventsLabel),
-                new Field("File", jfrFileLabel)));
+        contentPanel.add(createSectionPanel("Event Status",
+                new Field("JIT", jitStatusLabel),
+                new Field("JFR", jfrStatusLabel),
+                new Field("Counts", eventCountsLabel)));
+        contentPanel.add(Box.createVerticalGlue());
 
         JScrollPane scrollPane = new JScrollPane(contentPanel);
         UiStyle.applyScrollPaneStyle(scrollPane);
@@ -182,61 +153,65 @@ public class SummaryPanel extends JPanel {
         return label;
     }
 
-    private JLabel createNoticeLabel() {
-        JLabel label = new JLabel();
-        label.setHorizontalAlignment(JLabel.RIGHT);
-        label.setFont(UiStyle.APP_FONT);
-        return label;
-    }
-
     private void resetSummaryValues() {
-        jitLogLabel.setText("-");
-        jitLogLabel.setToolTipText(null);
-        jitEventsLabel.setText("-");
-        jitTopMethodsLabel.setText("-");
-        jitTopMethodsLabel.setToolTipText(null);
-        jfrAvailabilityLabel.setText("-");
-        jfrRecordingLabel.setText("-");
-        jfrEventsLabel.setText("-");
-        jfrFileLabel.setText("-");
-        jfrFileLabel.setToolTipText(null);
-    }
-
-    private void updateHeader(JavaProcessInfo process) {
-        setCompactText(noticeLabel, process.getDisplayName(), 80);
+        jitStatusLabel.setText("-");
+        jitStatusLabel.setToolTipText(null);
+        jfrStatusLabel.setText("-");
+        jfrStatusLabel.setToolTipText(null);
+        eventCountsLabel.setText("-");
+        eventCountsLabel.setToolTipText(null);
     }
 
     private void updateJit(JitLogStatus status, String filterText, JitEventSummary summary) {
-        String logText = status.getStateLabel() + " - " + compactPath(status.getLogPath());
-        jitLogLabel.setText(logText);
-        jitLogLabel.setToolTipText("Path: " + status.getLogPath()
+        setCompactText(jitStatusLabel,
+                status.getStateLabel() + " / " + summary.getMatchedEventCount() + " shown",
+                34);
+        jitStatusLabel.setToolTipText("Path: " + status.getLogPath()
                 + " / Filter: " + formatFilterText(filterText)
+                + " / Total: " + summary.getTotalEventCount()
+                + " / Shown: " + summary.getMatchedEventCount()
+                + " / Top: " + formatTopMethods(summary)
                 + " / Detail: " + status.getDetail());
-        jitEventsLabel.setText(summary.getTotalEventCount()
-                + " total / " + summary.getMatchedEventCount() + " shown");
-        setCompactText(jitTopMethodsLabel, formatTopMethods(summary), 72);
     }
 
     private void updateJfr(
             JfrAvailabilityStatus availabilityStatus,
             JfrRecordingStatus recordingStatus,
             JfrEventSummary eventSummary) {
-        jfrAvailabilityLabel.setText(availabilityStatus.getStateLabel());
-        jfrAvailabilityLabel.setToolTipText(availabilityStatus.getDetail());
-        jfrRecordingLabel.setText(recordingStatus.getStateLabel());
-        jfrRecordingLabel.setToolTipText(recordingStatus.getDetail());
+        String recordingText = eventSummary.isAvailable() ? "Saved" : recordingStatus.getStateLabel();
+        setCompactText(jfrStatusLabel,
+                availabilityStatus.getStateLabel() + " / " + recordingText,
+                34);
 
-        if (!eventSummary.isAvailable()) {
-            jfrEventsLabel.setText("Unavailable");
-            jfrEventsLabel.setToolTipText(eventSummary.getDetail());
-            jfrFileLabel.setText("-");
-            jfrFileLabel.setToolTipText(null);
+        String sourceText = eventSummary.isAvailable()
+                ? " / Source: " + compactPath(eventSummary.getSourcePath())
+                : "";
+        jfrStatusLabel.setToolTipText("Availability: " + availabilityStatus.getDetail()
+                + " / Recording: " + recordingStatus.getDetail()
+                + sourceText
+                + " / Summary: " + eventSummary.getDetail());
+    }
+
+    private void updateEventCounts(JitEventSummary jitSummary, JfrEventSummary jfrSummary) {
+        if (!jfrSummary.isAvailable()) {
+            setCompactText(eventCountsLabel,
+                    "JIT " + jitSummary.getMatchedEventCount() + ", JFR -",
+                    36);
+            eventCountsLabel.setToolTipText("JIT total: " + jitSummary.getTotalEventCount()
+                    + " / JIT shown: " + jitSummary.getMatchedEventCount()
+                    + " / JFR: " + jfrSummary.getDetail());
             return;
         }
-        jfrEventsLabel.setText(eventSummary.getTotalEventCount()
-                + " total, " + eventSummary.getCompilationEventCount()
-                + " compilation, " + eventSummary.getGcEventCount() + " GC");
-        setCompactText(jfrFileLabel, compactPath(eventSummary.getSourcePath()), 72);
+        setCompactText(eventCountsLabel,
+                "JIT " + jitSummary.getMatchedEventCount()
+                        + ", JFR " + jfrSummary.getTotalEventCount()
+                        + ", GC " + jfrSummary.getGcEventCount(),
+                36);
+        eventCountsLabel.setToolTipText("JIT total: " + jitSummary.getTotalEventCount()
+                + " / JIT shown: " + jitSummary.getMatchedEventCount()
+                + " / JFR total: " + jfrSummary.getTotalEventCount()
+                + " / JFR compilation: " + jfrSummary.getCompilationEventCount()
+                + " / JFR GC: " + jfrSummary.getGcEventCount());
     }
 
     private String formatTopMethods(JitEventSummary summary) {
