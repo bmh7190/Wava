@@ -21,10 +21,12 @@ public class LogPanelTest {
         LogPanel panel = new LogPanel();
 
         panel.setCurrentTargetFilter("CpuWarmupTarget");
+
+        assertEquals("", panel.getFilterText(), "filter before preset");
         panel.setFilterPreset(JitFilterPreset.CURRENT_TARGET);
 
         assertEquals(JitFilterPreset.CURRENT_TARGET, panel.getFilterPreset(), "preset");
-        assertEquals("CpuWarmupTarget", panel.getFilterText(), "filter text");
+        assertEquals("CpuWarmupTarget", panel.getFilterText(), "filter after preset");
     }
 
     private static void applySelectedSuggestionToFilterText() {

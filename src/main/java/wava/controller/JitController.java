@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import wava.model.jit.JitEvent;
 import wava.model.jit.JitEventSummary;
+import wava.model.jit.JitFilterPreset;
 import wava.model.jit.JitLogStatus;
 import wava.service.jit.JitEventFilter;
 import wava.service.jit.JitFilterSuggestionBuilder;
@@ -61,6 +62,7 @@ public class JitController {
     public void applyProcessLogSuggestion(JavaProcessInfo process) {
         selectedProcess = process;
         frame.getLogPanel().setCurrentTargetFilter(createCurrentTargetFilter(process));
+        frame.getLogPanel().setFilterPreset(JitFilterPreset.CURRENT_TARGET);
         updateFilterSuggestions();
         jitLogPathResolver.resolve(process).ifPresent(path -> {
             frame.getLogPanel().setLogPath(path);
