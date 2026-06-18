@@ -160,6 +160,7 @@ public class MainController {
         frame.getSummaryPanel().showSelectedProcess(process);
         frame.getLiveMetricsPanel().showSelectedProcess(process);
         if (process != null) {
+            jitController.applyProcessLogSuggestion(process);
             frame.getLogPanel().appendInfo("Selected process " + process.formatListItem() + ".");
         }
     }

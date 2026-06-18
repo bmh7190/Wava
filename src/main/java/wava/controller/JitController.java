@@ -8,13 +8,16 @@ import wava.model.jit.JitEvent;
 import wava.model.jit.JitEventSummary;
 import wava.model.jit.JitLogStatus;
 import wava.service.jit.JitEventFilter;
+import wava.service.jit.JitLogPathResolver;
 import wava.service.jit.JitLogReader;
 import wava.service.jit.JitSummaryAnalyzer;
 import wava.view.WavaFrame;
+import wava.model.process.JavaProcessInfo;
 
 public class JitController {
     private final WavaFrame frame;
     private final JitLogReader jitLogReader;
+    private final JitLogPathResolver jitLogPathResolver;
     private final JitSummaryAnalyzer jitSummaryAnalyzer;
     private final List<JitEvent> jitEvents;
     private JitEventFilter jitEventFilter;
@@ -25,6 +28,7 @@ public class JitController {
     public JitController(WavaFrame frame) {
         this.frame = frame;
         jitLogReader = new JitLogReader();
+        jitLogPathResolver = new JitLogPathResolver();
         jitSummaryAnalyzer = new JitSummaryAnalyzer();
         jitEvents = new ArrayList<>();
         jitEventFilter = new JitEventFilter("");
@@ -34,6 +38,7 @@ public class JitController {
     }
 
     public void resetForMonitoring() {
+        syncSettingsFromView();
         jitLogReader.reset();
         jitEvents.clear();
         updateJitLogStatus(true);
@@ -42,6 +47,17 @@ public class JitController {
     public void resetAll() {
         jitLogReader.reset();
         jitEvents.clear();
+    }
+
+    public void applyProcessLogSuggestion(JavaProcessInfo process) {
+        jitLogPathResolver.resolve(process).ifPresent(path -> {
+            frame.getLogPanel().setLogPath(path);
+            jitLogReader.setLogPath(path);
+            jitLogReader.reset();
+            jitEvents.clear();
+            frame.getLogPanel().appendInfo("Auto-selected JIT log " + path + " for " + process.getDisplayName() + ".");
+            updateJitLogStatus(true);
+        });
     }
 
     public void readNewEvents() {
@@ -64,9 +80,7 @@ public class JitController {
     }
 
     public void applySettings() {
-        jitLogReader.setLogPath(frame.getLogPanel().getLogPath());
-        jitFilterText = frame.getLogPanel().getFilterText().trim();
-        jitEventFilter = new JitEventFilter(jitFilterText);
+        syncSettingsFromView();
         jitEvents.clear();
         frame.getLogPanel().appendInfo("JIT settings applied. Log: " + jitLogReader.getLogPath());
         updateJitLogStatus(true);
@@ -98,6 +112,12 @@ public class JitController {
 
     private void updateJitLogStatus(boolean forceLog) {
         setJitLogStatus(jitLogReader.inspectStatus(), forceLog);
+    }
+
+    private void syncSettingsFromView() {
+        jitLogReader.setLogPath(frame.getLogPanel().getLogPath());
+        jitFilterText = frame.getLogPanel().getFilterText().trim();
+        jitEventFilter = new JitEventFilter(jitFilterText);
     }
 
     private void setJitLogStatus(JitLogStatus nextStatus, boolean forceLog) {
