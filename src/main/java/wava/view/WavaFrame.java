@@ -81,11 +81,21 @@ public class WavaFrame extends JFrame {
         panel.setOpaque(false);
         panel.setPreferredSize(new Dimension(LEFT_PANEL_WIDTH, 0));
 
+        JPanel logPathPanel = logPanel.getLogPathPanel();
+        logPathPanel.setPreferredSize(new Dimension(LEFT_PANEL_WIDTH, 82));
         liveMetricsPanel.setPreferredSize(new Dimension(LEFT_PANEL_WIDTH, LIVE_METRICS_PANEL_HEIGHT));
         summaryPanel.setPreferredSize(new Dimension(LEFT_PANEL_WIDTH, BOTTOM_PANEL_HEIGHT));
 
-        panel.add(processPanel, BorderLayout.CENTER);
+        panel.add(createProcessArea(logPathPanel), BorderLayout.CENTER);
         panel.add(createLeftBottomPanel(), BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private JPanel createProcessArea(JPanel logPathPanel) {
+        JPanel panel = new JPanel(new BorderLayout(0, 12));
+        panel.setOpaque(false);
+        panel.add(processPanel, BorderLayout.CENTER);
+        panel.add(logPathPanel, BorderLayout.SOUTH);
         return panel;
     }
 
@@ -135,7 +145,7 @@ public class WavaFrame extends JFrame {
         panel.setPreferredSize(new Dimension(0, BOTTOM_PANEL_HEIGHT));
         panel.setMinimumSize(new Dimension(0, 120));
         panel.add(logPanel);
-        panel.add(logPanel.getSettingsPanel());
+        panel.add(logPanel.getFilterPanel());
         return panel;
     }
 

@@ -13,7 +13,8 @@ public class LogPanelTest {
     private static void createLogPanel() {
         LogPanel panel = new LogPanel();
 
-        assertTrue(panel.getSettingsPanel().getComponentCount() > 0, "settings components");
+        assertTrue(panel.getLogPathPanel().getComponentCount() > 0, "path components");
+        assertTrue(panel.getFilterPanel().getComponentCount() > 0, "filter components");
     }
 
     private static void updateCurrentTargetFilterWhenSelected() {

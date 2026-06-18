@@ -33,7 +33,8 @@ public class LogPanel extends JPanel {
     private final JButton applyButton;
     private final JButton browseButton;
     private final JButton useSuggestionButton;
-    private final JPanel settingsPanel;
+    private final JPanel logPathPanel;
+    private final JPanel filterPanel;
     private String currentTargetFilterText;
 
     public LogPanel() {
@@ -54,7 +55,7 @@ public class LogPanel extends JPanel {
         UiStyle.applyTextFieldStyle(logPathField);
         UiStyle.applyComboBoxStyle(filterPresetComboBox);
         UiStyle.applyTextFieldStyle(filterField);
-        applyButton = new JButton("Apply JIT Settings");
+        applyButton = new JButton("Apply Filter");
         browseButton = new JButton("Browse");
         useSuggestionButton = new JButton("Use Suggestion");
         currentTargetFilterText = "";
@@ -73,7 +74,8 @@ public class LogPanel extends JPanel {
         UiStyle.applyButtonStyle(clearButton);
         clearButton.addActionListener(event -> clear());
 
-        settingsPanel = createSettingsPanel();
+        logPathPanel = createLogPathPanel();
+        filterPanel = createFilterSettingsPanel();
         JScrollPane scrollPane = new JScrollPane(logArea);
         UiStyle.applyScrollPaneStyle(scrollPane);
         add(scrollPane, BorderLayout.CENTER);
@@ -148,17 +150,32 @@ public class LogPanel extends JPanel {
         logPathField.setText(path.toString());
     }
 
-    public JPanel getSettingsPanel() {
-        return settingsPanel;
+    public JPanel getLogPathPanel() {
+        return logPathPanel;
     }
 
-    private JPanel createSettingsPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        UiStyle.applyPanelStyle(panel, "JIT Settings");
+    public JPanel getFilterPanel() {
+        return filterPanel;
+    }
 
-        JPanel formPanel = new JPanel(new GridLayout(4, 1, 0, 4));
+    private JPanel createLogPathPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        UiStyle.applyPanelStyle(panel, "JIT Log Path");
+
+        JPanel formPanel = new JPanel(new GridLayout(1, 1, 0, 4));
         formPanel.setOpaque(false);
         formPanel.add(createPathPanel());
+
+        panel.add(formPanel, BorderLayout.NORTH);
+        return panel;
+    }
+
+    private JPanel createFilterSettingsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        UiStyle.applyPanelStyle(panel, "JIT Filter");
+
+        JPanel formPanel = new JPanel(new GridLayout(3, 1, 0, 4));
+        formPanel.setOpaque(false);
         formPanel.add(createPresetPanel());
         formPanel.add(createFilterPanel());
         formPanel.add(applyButton);
