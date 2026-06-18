@@ -12,7 +12,7 @@ public class SummaryPanelTest {
     private static void createSummaryPanel() {
         SummaryPanel panel = new SummaryPanel();
 
-        assertTrue(panel.getComponentCount() == 2, "component count");
+        assertTrue(panel.getComponentCount() == 1, "component count");
     }
 
     private static void updateBasicSummaryStates() {

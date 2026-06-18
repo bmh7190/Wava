@@ -51,18 +51,17 @@ public class SummaryPanel extends JPanel {
         jfrEventsLabel = createValueLabel();
         jfrFileLabel = createValueLabel();
 
-        add(createHeaderPanel(), BorderLayout.NORTH);
         add(createScrollPane(), BorderLayout.CENTER);
         resetSummaryValues();
         showMessage("No monitoring data.");
     }
 
     public void showState(MonitorState state) {
-        stateLabel.setText("Monitor State: " + state.getLabel());
+        stateLabel.setText(state.getLabel());
     }
 
     public void showMessage(String message) {
-        noticeLabel.setText(message);
+        noticeLabel.setText("");
     }
 
     public void showSelectedProcess(JavaProcessInfo process) {
@@ -71,7 +70,7 @@ public class SummaryPanel extends JPanel {
             showMessage("No process selected.");
             return;
         }
-        showMessage("Selected: " + process.getDisplayName());
+        showMessage("");
     }
 
     public void showEventSummary(
@@ -87,7 +86,6 @@ public class SummaryPanel extends JPanel {
             return;
         }
 
-        updateHeader(process);
         updateJit(jitLogStatus, jitFilterText, jitSummary);
         updateJfr(jfrStatus, jfrRecordingStatus, jfrEventSummary);
     }

@@ -14,7 +14,7 @@ public class LiveMetricsPanelTest {
     private static void createLiveMetricsPanel() {
         LiveMetricsPanel panel = new LiveMetricsPanel();
 
-        assertTrue(panel.getComponentCount() == 2, "component count");
+        assertTrue(panel.getComponentCount() == 1, "component count");
     }
 
     private static void updateLiveMetricsStates() {

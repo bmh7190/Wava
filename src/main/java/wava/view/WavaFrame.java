@@ -20,7 +20,7 @@ public class WavaFrame extends JFrame {
     private static final int LIVE_METRICS_PANEL_HEIGHT = 330;
     private static final double GRAPH_SPLIT_RESIZE_WEIGHT = 0.5;
     private static final double RIGHT_SPLIT_RESIZE_WEIGHT = 0.72;
-    private static final double LOG_FILTER_SPLIT_RESIZE_WEIGHT = 0.55;
+    private static final double LOG_FILTER_SPLIT_RESIZE_WEIGHT = 0.75;
 
     private final ProcessPanel processPanel;
     private final LiveMetricsPanel liveMetricsPanel;
@@ -47,6 +47,7 @@ public class WavaFrame extends JFrame {
         setMinimumSize(new Dimension(DEFAULT_WIDTH, DEFAULT_HEIGHT));
         setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
         setLocationRelativeTo(null);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
 
     private JPanel createContentPane() {
@@ -141,13 +142,17 @@ public class WavaFrame extends JFrame {
     }
 
     private JSplitPane createBottomPanel() {
+        JPanel filterPanel = logPanel.getFilterPanel();
+        logPanel.setPreferredSize(new Dimension(900, BOTTOM_PANEL_HEIGHT));
+        filterPanel.setPreferredSize(new Dimension(300, BOTTOM_PANEL_HEIGHT));
         JSplitPane splitPane = new JSplitPane(
                 JSplitPane.HORIZONTAL_SPLIT,
                 logPanel,
-                logPanel.getFilterPanel());
+                filterPanel);
         splitPane.setBorder(null);
         splitPane.setDividerSize(8);
         splitPane.setResizeWeight(LOG_FILTER_SPLIT_RESIZE_WEIGHT);
+        splitPane.setDividerLocation(LOG_FILTER_SPLIT_RESIZE_WEIGHT);
         splitPane.setPreferredSize(new Dimension(0, BOTTOM_PANEL_HEIGHT));
         splitPane.setMinimumSize(new Dimension(0, 120));
         return splitPane;

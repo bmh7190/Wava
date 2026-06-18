@@ -19,7 +19,6 @@ import wava.model.warmup.WarmupSummary;
 public class LiveMetricsPanel extends JPanel {
     private static final int SECTION_GAP = 8;
 
-    private final JLabel targetLabel;
     private final JLabel cpuLabel;
     private final JLabel heapLabel;
     private final JLabel gcLabel;
@@ -31,7 +30,6 @@ public class LiveMetricsPanel extends JPanel {
         super(new BorderLayout(0, 6));
         UiStyle.applyPanelStyle(this, "Live Metrics");
 
-        targetLabel = createMutedLabel();
         cpuLabel = createValueLabel();
         heapLabel = createValueLabel();
         gcLabel = createValueLabel();
@@ -39,18 +37,14 @@ public class LiveMetricsPanel extends JPanel {
         warmupHeapLabel = createValueLabel();
         stabilityLabel = createValueLabel();
 
-        add(targetLabel, BorderLayout.NORTH);
         add(createContentPanel(), BorderLayout.CENTER);
         clear();
     }
 
     public void showSelectedProcess(JavaProcessInfo process) {
         if (process == null) {
-            targetLabel.setText("No process selected.");
             clearValues();
-            return;
         }
-        setCompactText(targetLabel, process.getDisplayName(), 34);
     }
 
     public void showMonitoringData(
@@ -66,7 +60,6 @@ public class LiveMetricsPanel extends JPanel {
     }
 
     public void clear() {
-        targetLabel.setText("No monitoring data.");
         clearValues();
     }
 
@@ -189,33 +182,11 @@ public class LiveMetricsPanel extends JPanel {
         return label;
     }
 
-    private JLabel createMutedLabel() {
-        JLabel label = new JLabel();
-        label.setForeground(UiStyle.MUTED_TEXT);
-        label.setFont(UiStyle.APP_FONT);
-        return label;
-    }
-
     private JLabel createValueLabel() {
         JLabel label = new JLabel("-");
         label.setForeground(UiStyle.TEXT);
         label.setFont(UiStyle.APP_FONT);
         return label;
-    }
-
-    private void setCompactText(JLabel label, String value, int maxLength) {
-        if (value == null || value.isBlank()) {
-            label.setText("-");
-            label.setToolTipText(null);
-            return;
-        }
-        if (value.length() <= maxLength) {
-            label.setText(value);
-            label.setToolTipText(null);
-            return;
-        }
-        label.setText(value.substring(0, maxLength - 3) + "...");
-        label.setToolTipText(value);
     }
 
     private String formatValue(double value) {
