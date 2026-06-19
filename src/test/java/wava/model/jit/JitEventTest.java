@@ -25,7 +25,7 @@ public class JitEventTest {
         assertEquals(4684695L, event.getJvmElapsedMillis(), "elapsed millis");
         assertTrue(event.hasJvmElapsedMillis(), "elapsed available");
         assertEquals(
-                "[JVM +01:18:04.695] #12 L4 com.example.Target.run compiled",
+                "[01:18:04.695] #12 L4 com.example.Target.run compiled",
                 event.formatLogMessage(),
                 "elapsed message");
     }

@@ -77,6 +77,6 @@ public class JitEvent {
         long minutes = (totalSeconds % 3600L) / 60L;
         long seconds = totalSeconds % 60L;
         long millis = jvmElapsedMillis % 1000L;
-        return String.format(Locale.US, "[JVM +%02d:%02d:%02d.%03d] ", hours, minutes, seconds, millis);
+        return String.format(Locale.US, "[%02d:%02d:%02d.%03d] ", hours, minutes, seconds, millis);
     }
 }
