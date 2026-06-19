@@ -9,6 +9,8 @@ import wava.model.jit.JitEventSummary;
 import wava.model.jit.JitFilterPreset;
 import wava.model.jit.JitLogStatus;
 import wava.service.jit.JitEventFilter;
+import wava.service.jit.JitDefaultFilter;
+import wava.service.jit.JitDefaultFilterPolicy;
 import wava.service.jit.JitFilterSuggestionBuilder;
 import wava.service.jit.JitLogPathResolver;
 import wava.service.jit.JitLogReader;
@@ -22,6 +24,7 @@ public class JitController {
     private final WavaFrame frame;
     private final JitLogReader jitLogReader;
     private final JitLogPathResolver jitLogPathResolver;
+    private final JitDefaultFilterPolicy jitDefaultFilterPolicy;
     private final JitFilterSuggestionBuilder jitFilterSuggestionBuilder;
     private final JitSummaryAnalyzer jitSummaryAnalyzer;
     private final List<JitEvent> jitEvents;
@@ -35,6 +38,7 @@ public class JitController {
         this.frame = frame;
         jitLogReader = new JitLogReader();
         jitLogPathResolver = new JitLogPathResolver();
+        jitDefaultFilterPolicy = new JitDefaultFilterPolicy();
         jitFilterSuggestionBuilder = new JitFilterSuggestionBuilder();
         jitSummaryAnalyzer = new JitSummaryAnalyzer();
         jitEvents = new ArrayList<>();
@@ -61,8 +65,9 @@ public class JitController {
 
     public void applyProcessLogSuggestion(JavaProcessInfo process) {
         selectedProcess = process;
-        frame.getLogPanel().setCurrentTargetFilter(createCurrentTargetFilter(process));
-        frame.getLogPanel().setFilterPreset(JitFilterPreset.CURRENT_TARGET);
+        JitDefaultFilter defaultFilter = jitDefaultFilterPolicy.resolve(process);
+        frame.getLogPanel().setCurrentTargetFilter(defaultFilter.getCurrentTargetFilter());
+        frame.getLogPanel().setFilterPreset(defaultFilter.getPreset());
         updateFilterSuggestions();
         jitLogPathResolver.resolve(process).ifPresent(path -> {
             frame.getLogPanel().setLogPath(path);
@@ -144,18 +149,6 @@ public class JitController {
                 selectedProcess,
                 jitEvents,
                 MAX_FILTER_SUGGESTIONS));
-    }
-
-    private String createCurrentTargetFilter(JavaProcessInfo process) {
-        if (process == null) {
-            return "";
-        }
-        String displayName = process.getDisplayName();
-        int packageSeparator = displayName.lastIndexOf('.');
-        if (packageSeparator >= 0 && packageSeparator + 1 < displayName.length()) {
-            return displayName.substring(packageSeparator + 1);
-        }
-        return displayName;
     }
 
     private void setJitLogStatus(JitLogStatus nextStatus, boolean forceLog) {
