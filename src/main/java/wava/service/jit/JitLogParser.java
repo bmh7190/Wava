@@ -16,6 +16,7 @@ public class JitLogParser {
             return Optional.empty();
         }
 
+        Optional<Long> jvmElapsedMillis = parseLong(tokens[0]);
         Optional<Integer> compileId = parseInteger(tokens[1]);
         if (compileId.isEmpty()) {
             return Optional.empty();
@@ -24,6 +25,7 @@ public class JitLogParser {
         String level = findLevel(tokens, methodIndex);
         return Optional.of(new JitEvent(
                 timestampMillis,
+                jvmElapsedMillis.orElse(-1L),
                 compileId.get(),
                 level,
                 tokens[methodIndex],
@@ -51,6 +53,14 @@ public class JitLogParser {
     private Optional<Integer> parseInteger(String value) {
         try {
             return Optional.of(Integer.parseInt(value));
+        } catch (NumberFormatException exception) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<Long> parseLong(String value) {
+        try {
+            return Optional.of(Long.parseLong(value));
         } catch (NumberFormatException exception) {
             return Optional.empty();
         }

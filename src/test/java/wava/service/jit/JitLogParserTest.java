@@ -20,6 +20,7 @@ public class JitLogParserTest {
 
         assertTrue(event.isPresent(), "event present");
         assertEquals(1000L, event.get().getTimestampMillis(), "timestamp");
+        assertEquals(123L, event.get().getJvmElapsedMillis(), "elapsed");
         assertEquals(1, event.get().getCompileId(), "compile id");
         assertEquals("3", event.get().getLevel(), "level");
         assertEquals("com.example.MyService::process", event.get().getMethodName(), "method");
@@ -33,6 +34,7 @@ public class JitLogParserTest {
                 2000L);
 
         assertTrue(event.isPresent(), "flag event present");
+        assertEquals(456L, event.get().getJvmElapsedMillis(), "flag elapsed");
         assertEquals(22, event.get().getCompileId(), "flag compile id");
         assertEquals("4", event.get().getLevel(), "flag level");
         assertEquals("com.example.Worker::loop", event.get().getMethodName(), "flag method");

@@ -4,6 +4,7 @@ public class JitEventTest {
     public static void main(String[] args) {
         formatEventWithLevel();
         formatEventWithoutLevel();
+        formatEventWithJvmElapsedTime();
     }
 
     private static void formatEventWithLevel() {
@@ -18,8 +19,31 @@ public class JitEventTest {
         assertEquals("#12 com.example.Target.run compiled", event.formatLogMessage(), "plain message");
     }
 
+    private static void formatEventWithJvmElapsedTime() {
+        JitEvent event = new JitEvent(1000L, 4684695L, 12, "4", "com.example.Target::run", "raw");
+
+        assertEquals(4684695L, event.getJvmElapsedMillis(), "elapsed millis");
+        assertTrue(event.hasJvmElapsedMillis(), "elapsed available");
+        assertEquals(
+                "#12 L4 com.example.Target.run compiled (JVM +4684.695s)",
+                event.formatLogMessage(),
+                "elapsed message");
+    }
+
+    private static void assertTrue(boolean condition, String label) {
+        if (!condition) {
+            throw new AssertionError(label + " expected true");
+        }
+    }
+
     private static void assertEquals(String expected, String actual, String label) {
         if (!expected.equals(actual)) {
+            throw new AssertionError(label + " expected " + expected + " but was " + actual);
+        }
+    }
+
+    private static void assertEquals(long expected, long actual, String label) {
+        if (expected != actual) {
             throw new AssertionError(label + " expected " + expected + " but was " + actual);
         }
     }
