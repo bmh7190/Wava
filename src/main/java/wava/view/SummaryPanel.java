@@ -20,6 +20,7 @@ import wava.model.jfr.JfrRecordingStatus;
 import wava.model.jit.JitEventSummary;
 import wava.model.jit.JitLogStatus;
 import wava.model.jit.JitMethodCount;
+import wava.model.jit.JitMethodSummary;
 import wava.model.monitor.MonitorState;
 import wava.model.process.JavaProcessInfo;
 
@@ -166,12 +167,7 @@ public class SummaryPanel extends JPanel {
         setCompactText(jitStatusLabel,
                 status.getStateLabel() + " / " + summary.getMatchedEventCount() + " shown",
                 34);
-        jitStatusLabel.setToolTipText("Path: " + status.getLogPath()
-                + " / Filter: " + formatFilterText(filterText)
-                + " / Total: " + summary.getTotalEventCount()
-                + " / Shown: " + summary.getMatchedEventCount()
-                + " / Top: " + formatTopMethods(summary)
-                + " / Detail: " + status.getDetail());
+        jitStatusLabel.setToolTipText(formatJitTooltip(status, filterText, summary));
     }
 
     private void updateJfr(
@@ -232,6 +228,55 @@ public class SummaryPanel extends JPanel {
             count++;
         }
         return builder.toString();
+    }
+
+    private String formatJitTooltip(
+            JitLogStatus status,
+            String filterText,
+            JitEventSummary summary) {
+        StringBuilder builder = new StringBuilder("<html>");
+        appendTooltipLine(builder, "Path", status.getLogPath().toString());
+        appendTooltipLine(builder, "Filter", formatFilterText(filterText));
+        appendTooltipLine(builder, "Total", String.valueOf(summary.getTotalEventCount()));
+        appendTooltipLine(builder, "Shown", String.valueOf(summary.getMatchedEventCount()));
+        appendTooltipLine(builder, "Top", formatTopMethods(summary));
+        appendTooltipLine(builder, "Detail", status.getDetail());
+        if (!summary.getTopMethodSummaries().isEmpty()) {
+            builder.append("<br><b>Method summary</b>");
+            for (JitMethodSummary methodSummary : summary.getTopMethodSummaries()) {
+                builder.append("<br>")
+                        .append(escapeHtml(methodSummary.getMethodName()))
+                        .append(" - events ")
+                        .append(methodSummary.getEventCount())
+                        .append(", latest ")
+                        .append(escapeHtml(methodSummary.getLatestLevelLabel()))
+                        .append(", time ")
+                        .append(escapeHtml(methodSummary.formatElapsedRange()));
+                if (methodSummary.isMadeNotEntrantObserved()) {
+                    builder.append(", made not entrant");
+                }
+            }
+        }
+        builder.append("</html>");
+        return builder.toString();
+    }
+
+    private void appendTooltipLine(StringBuilder builder, String label, String value) {
+        builder.append("<b>")
+                .append(escapeHtml(label))
+                .append(":</b> ")
+                .append(escapeHtml(value))
+                .append("<br>");
+    }
+
+    private String escapeHtml(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
     }
 
     private String compactPath(Path path) {
