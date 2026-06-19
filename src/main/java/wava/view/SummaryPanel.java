@@ -30,6 +30,7 @@ public class SummaryPanel extends JPanel {
     private final JLabel jitStatusLabel;
     private final JLabel jfrStatusLabel;
     private final JLabel eventCountsLabel;
+    private final JLabel jitTopMethodLabel;
 
     public SummaryPanel() {
         super(new BorderLayout(0, 6));
@@ -38,6 +39,7 @@ public class SummaryPanel extends JPanel {
         jitStatusLabel = createValueLabel();
         jfrStatusLabel = createValueLabel();
         eventCountsLabel = createValueLabel();
+        jitTopMethodLabel = createValueLabel();
 
         add(createScrollPane(), BorderLayout.CENTER);
         resetSummaryValues();
@@ -84,7 +86,8 @@ public class SummaryPanel extends JPanel {
         contentPanel.add(createSectionPanel("Event Status",
                 new Field("JIT", jitStatusLabel),
                 new Field("JFR", jfrStatusLabel),
-                new Field("Counts", eventCountsLabel)));
+                new Field("Counts", eventCountsLabel),
+                new Field("Top", jitTopMethodLabel)));
         contentPanel.add(Box.createVerticalGlue());
 
         JScrollPane scrollPane = new JScrollPane(contentPanel);
@@ -161,6 +164,8 @@ public class SummaryPanel extends JPanel {
         jfrStatusLabel.setToolTipText(null);
         eventCountsLabel.setText("-");
         eventCountsLabel.setToolTipText(null);
+        jitTopMethodLabel.setText("-");
+        jitTopMethodLabel.setToolTipText(null);
     }
 
     private void updateJit(JitLogStatus status, String filterText, JitEventSummary summary) {
@@ -168,6 +173,7 @@ public class SummaryPanel extends JPanel {
                 status.getStateLabel() + " / " + summary.getMatchedEventCount() + " shown",
                 34);
         jitStatusLabel.setToolTipText(formatJitTooltip(status, filterText, summary));
+        updateTopMethod(summary);
     }
 
     private void updateJfr(
@@ -259,6 +265,57 @@ public class SummaryPanel extends JPanel {
         }
         builder.append("</html>");
         return builder.toString();
+    }
+
+    private void updateTopMethod(JitEventSummary summary) {
+        if (summary.getTopMethodSummaries().isEmpty()) {
+            if (summary.getTotalEventCount() > 0) {
+                setCompactText(jitTopMethodLabel, "No match - try All", 34);
+                jitTopMethodLabel.setToolTipText(
+                        "No matching JIT events for the current filter. Try the All preset or a method name such as HotService.");
+                return;
+            }
+            jitTopMethodLabel.setText("No JIT events");
+            jitTopMethodLabel.setToolTipText("No JIT events have been read yet.");
+            return;
+        }
+
+        JitMethodSummary topMethod = summary.getTopMethodSummaries().get(0);
+        setCompactText(jitTopMethodLabel, formatTopMethodText(topMethod), 34);
+        jitTopMethodLabel.setToolTipText(formatTopMethodTooltip(topMethod));
+    }
+
+    private String formatTopMethodText(JitMethodSummary methodSummary) {
+        return shortMethodName(methodSummary.getMethodName())
+                + " / " + methodSummary.getEventCount()
+                + " JIT events / " + methodSummary.getLatestLevelLabel();
+    }
+
+    private String formatTopMethodTooltip(JitMethodSummary methodSummary) {
+        StringBuilder builder = new StringBuilder("<html>");
+        appendTooltipLine(builder, "Method", methodSummary.getMethodName());
+        appendTooltipLine(builder, "JIT events", String.valueOf(methodSummary.getEventCount()));
+        appendTooltipLine(builder, "Latest level", methodSummary.getLatestLevelLabel());
+        appendTooltipLine(builder, "Time", methodSummary.formatElapsedRange());
+        appendTooltipLine(
+                builder,
+                "Made not entrant",
+                methodSummary.isMadeNotEntrantObserved() ? "Observed" : "Not observed");
+        builder.append("</html>");
+        return builder.toString();
+    }
+
+    private String shortMethodName(String methodName) {
+        int separator = methodName.lastIndexOf('.');
+        if (separator < 0 || separator + 1 >= methodName.length()) {
+            return methodName;
+        }
+
+        int previousSeparator = methodName.lastIndexOf('.', separator - 1);
+        if (previousSeparator < 0 || previousSeparator + 1 >= methodName.length()) {
+            return methodName.substring(separator + 1);
+        }
+        return methodName.substring(previousSeparator + 1);
     }
 
     private void appendTooltipLine(StringBuilder builder, String label, String value) {
