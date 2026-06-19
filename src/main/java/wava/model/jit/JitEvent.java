@@ -61,17 +61,22 @@ public class JitEvent {
 
     public String formatLogMessage() {
         String displayName = methodName.replace("::", ".");
-        String elapsedText = formatJvmElapsedText();
+        String elapsedPrefix = formatJvmElapsedPrefix();
         if (level.isBlank()) {
-            return "#" + compileId + " " + displayName + " compiled" + elapsedText;
+            return elapsedPrefix + "#" + compileId + " " + displayName + " compiled";
         }
-        return "#" + compileId + " L" + level + " " + displayName + " compiled" + elapsedText;
+        return elapsedPrefix + "#" + compileId + " L" + level + " " + displayName + " compiled";
     }
 
-    private String formatJvmElapsedText() {
+    private String formatJvmElapsedPrefix() {
         if (!hasJvmElapsedMillis()) {
             return "";
         }
-        return " (JVM +" + String.format(Locale.US, "%.3f", jvmElapsedMillis / 1000.0) + "s)";
+        long totalSeconds = jvmElapsedMillis / 1000L;
+        long hours = totalSeconds / 3600L;
+        long minutes = (totalSeconds % 3600L) / 60L;
+        long seconds = totalSeconds % 60L;
+        long millis = jvmElapsedMillis % 1000L;
+        return String.format(Locale.US, "[JVM +%02d:%02d:%02d.%03d] ", hours, minutes, seconds, millis);
     }
 }
