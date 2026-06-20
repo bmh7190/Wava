@@ -34,6 +34,11 @@ logs/*.log
 exports/*.csv
 exports/jfr/*.jfr
 
+### Packaged app image ###
+/Wava.exe
+/app/
+/runtime/
+
 ### Mac OS ###
 .DS_Store
 
