@@ -12,6 +12,7 @@ import wava.model.process.JavaProcessInfo;
 import wava.model.process.TargetProcessStatus;
 import wava.model.warmup.WarmupStabilityPoint;
 import wava.model.warmup.WarmupSummary;
+import wava.service.export.CsvExportResult;
 import wava.service.metric.MonitorService;
 import wava.service.process.JavaProcessScanner;
 import wava.service.process.ProcessStatusChecker;
@@ -119,12 +120,13 @@ public class MainController {
         }
 
         try {
-            Path outputPath = exportController.export(
+            CsvExportResult result = exportController.export(
                     samples,
                     jitController.getJitEvents(),
                     jitController.getJitEventFilter());
-            frame.getLogPanel().appendInfo("Exported monitoring data to " + outputPath + ".");
-            frame.getSummaryPanel().showMessage("Exported monitoring data to " + outputPath + ".");
+            frame.getLogPanel().appendInfo("Exported monitoring CSV to " + result.getMonitoringPath() + ".");
+            frame.getLogPanel().appendInfo("Exported JIT events CSV to " + result.getJitEventsPath() + ".");
+            frame.getSummaryPanel().showMessage("Exported CSV files to " + result.getMonitoringPath().getParent() + ".");
         } catch (IOException exception) {
             frame.getLogPanel().appendInfo("Failed to export CSV: " + exception.getMessage());
             frame.getSummaryPanel().showMessage("Failed to export CSV.");
