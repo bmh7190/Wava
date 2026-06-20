@@ -43,6 +43,7 @@ public class WavaFrame extends JFrame {
         summaryPanel = new SummaryPanel();
 
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setIconImages(AppIconFactory.createFrameIcons());
         setContentPane(createContentPane());
         setMinimumSize(new Dimension(DEFAULT_WIDTH, DEFAULT_HEIGHT));
         setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);

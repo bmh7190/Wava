@@ -41,3 +41,4 @@ exports/jfr/*.jfr
 /docs
 AGENTS.md
 WORKLOG.md
+/build/
